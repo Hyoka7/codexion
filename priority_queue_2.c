@@ -1,42 +1,32 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   priority_queue_2.c                                 :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: hfujisad <hfujisad@student.42tokyo.jp>     +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/06/29 21:06:43 by hfujisad          #+#    #+#             */
+/*   Updated: 2026/07/01 20:34:21 by hfujisad         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "codexion.h"
 
-void pop_priority_queue(t_priority_queue *queue, int *res_id, float *res_priority)
+void	free_priority_queue(t_pq *pq)
 {
-    t_pqnode *parent;
-    t_pqnode *node;
+	size_t	pq_size;
+	size_t	index;
 
-    if (queue->root == NULL)
-        return ;
-    parent = NULL;
-    node = queue->root;
-    while (node->right)
-    {
-        parent = node;
-        node = node->right;
-    }
-    *res_id = node->id;
-    *res_priority = node->priority;
-    if (parent == NULL)
-        queue->root = node->left;
-    else
-        parent->right = node->left;
-    free(node);
-    queue->size--;
-}
-
-static void free_pq_node(t_pqnode *node)
-{
-    if (node)
-    {
-        free_pq_node(node->left);
-        free_pq_node(node->right);
-        free(node);
-    }
-    return ;
-}
-
-void free_priority_queue(t_priority_queue *queue)
-{
-    free_pq_node(queue->root);
-    free(queue);
+	if (!pq)
+	{
+		return ;
+	}
+	pq_size = pq->size;
+	index = 0;
+	while (index < pq_size)
+	{
+		free(pq->queue[index++]);
+	}
+	free(pq->queue);
+	free(pq);
 }

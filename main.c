@@ -1,49 +1,65 @@
-#include <stdio.h>
-#include <pthread.h>
-#include "codexion.h"
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   main.c                                             :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: hfujisad <hfujisad@student.42tokyo.jp>     +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/06/29 21:16:36 by hfujisad          #+#    #+#             */
+/*   Updated: 2026/07/01 20:34:23 by hfujisad         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
-int	cnt = 0;
-pthread_mutex_t mutex=PTHREAD_MUTEX_INITIALIZER;
+// #include "codexion.h"
+// #include <stdio.h>
+// #include <stdlib.h>
+// #include <sys/time.h>
+// #include <unistd.h>
 
-void *routine(void *p)
-{
-	for (int i = 0; i < 10000; i++)
-    {
-        pthread_mutex_lock(&mutex);
-		cnt++;
-        pthread_mutex_unlock(&mutex);
-    }
-	return (NULL);
-}
-
-// int main(void)
+// int	compare_time(const t_pqnode *a, const t_pqnode *b)
 // {
-// 	pthread_t p1, p2;
-
-// 	// 2つのスレッドで並列処理する
-// 	pthread_create(&p1, NULL, &routine, NULL);
-// 	pthread_create(&p2, NULL, &routine, NULL);
-
-// 	// 終了するまで待つ
-// 	pthread_join(p1, NULL);
-// 	pthread_join(p2, NULL);
-
-// 	printf("cnt -> %d\n", cnt);
+// 	if (a->time_data.tv_sec < b->time_data.tv_sec)
+// 		return (-1);
+// 	if (a->time_data.tv_sec > b->time_data.tv_sec)
+// 		return (1);
+// 	if (a->time_data.tv_usec < b->time_data.tv_usec)
+// 		return (-1);
+// 	if (a->time_data.tv_usec > b->time_data.tv_usec)
+// 		return (1);
+// 	return (0);
 // }
 
+// int	main(void)
+// {
+// 	struct timeval	tv;
+// 	t_pq			*q = create_pq(10);
 
-int main()
-{
-    int pop_id;
-    float pop_priority;
+// 	q->cmp = compare_time;
+// 	gettimeofday(&tv, NULL);
+// 	push_pq(q, 101, tv);
+// 	usleep(100);
+// 	gettimeofday(&tv, NULL);
+// 	push_pq(q, 102, tv);
+// 	usleep(100);
+// 	gettimeofday(&tv, NULL);
+// 	push_pq(q, 103, tv);
+// 	int	i = 0;
 
-    t_priority_queue *q = create_priority_queue();
-    push_priority_queue(q, 100, 0.5);
-    push_priority_queue(q, 101, 0.7);
-    push_priority_queue(q, 102, 0.3);
-    for (int i = 0; i < 3; i++)
-    {
-        pop_priority_queue(q, &pop_id, &pop_priority);
-        printf("%d %f\n", pop_id, pop_priority);
-    }
-}
+// 	while (i < 3)
+// 	{
+// 		t_pqnode	*node = pop_pq(q);
+
+// 		if (node)
+// 		{
+// 			printf("Coder ID: %d, Time: %ld.%06d\n",
+// 				node->coder_id,
+// 			(long) node->time_data.tv_sec,
+// 			(int) node->time_data.tv_usec);
+// 			free(node);
+// 		}
+// 		i++;
+// 	}
+// 	free(q->queue);
+// 	free(q);
+// 	return (0);
+// }
