@@ -6,7 +6,7 @@
 /*   By: hfujisad <hfujisad@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/29 21:06:36 by hfujisad          #+#    #+#             */
-/*   Updated: 2026/07/01 20:34:20 by hfujisad         ###   ########.fr       */
+/*   Updated: 2026/07/07 17:06:28 by hfujisad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,7 @@ t_pq	*create_pq(int num_coders)
 	return (pq);
 }
 
-static t_pqnode	*create_new_node(int coder_id, struct timeval time_data)
+static t_pqnode	*create_new_node(int coder_id, long long time_data)
 {
 	t_pqnode	*new_node;
 
@@ -42,17 +42,21 @@ static t_pqnode	*create_new_node(int coder_id, struct timeval time_data)
 		return (NULL);
 	}
 	new_node->coder_id = coder_id;
-	new_node->time_data = time_data;
+	new_node->queue_seconds = time_data;
 	return (new_node);
 }
 
-void	push_pq(t_pq *queue, int coder_id, struct timeval time_data)
+void	push_pq(t_pq *queue, int coder_id, long long time_data)
 {
 	size_t		new_node_i;
 	size_t		cmp_i;
 	t_pqnode	*temp;
+	t_pqnode	*new_node;
 
-	queue->queue[queue->size++] = create_new_node(coder_id, time_data);
+	new_node = create_new_node(coder_id, time_data);
+	if (!new_node)
+		return ;
+	queue->queue[queue->size++] = new_node;
 	new_node_i = queue->size - 1;
 	while (new_node_i)
 	{
@@ -99,7 +103,8 @@ t_pqnode	*pop_pq(t_pq *queue)
 		if (left >= queue->size)
 			break ;
 		right = 2 * parent + 2;
-		if (right >= queue->size || queue->cmp(queue->queue[left], queue->queue[right]) <= 0)
+		if (right >= queue->size || queue->cmp(queue->queue[left],
+				queue->queue[right]) <= 0)
 			child = left;
 		else
 			child = right;
