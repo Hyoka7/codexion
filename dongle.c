@@ -6,11 +6,18 @@
 /*   By: hfujisad <hfujisad@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/07/06 18:23:50 by hfujisad          #+#    #+#             */
-/*   Updated: 2026/07/07 18:36:30 by hfujisad         ###   ########.fr       */
+/*   Updated: 2026/07/07 18:59:26 by hfujisad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "codexion.h"
+
+static long long	ft_min(long long a, long long b)
+{
+	if (a > b)
+		return (b);
+	return (a);
+}
 
 static t_dongle	*free_dongles(t_dongle *dongles, int size)
 {
@@ -57,6 +64,8 @@ t_dongle	*init_dongles(int *conf)
 void	get_single_dongle(t_dongle *dongle, t_coder *coder)
 {
 	long long		time_data;
+	long long		burnout_time;
+	long long		wake_time;
 	struct timespec	ts;
 
 	if (coder->is_edf)
@@ -66,8 +75,14 @@ void	get_single_dongle(t_dongle *dongle, t_coder *coder)
 	pthread_mutex_lock(&dongle->mutex);
 	dongle->pq->cmp = coder->cmp;
 	push_pq(dongle->pq, coder->coder_id, time_data);
+	burnout_time = coder->last_complie_start + coder->conf[TIME_TO_BURNOUT_MS];
 	while (1)
 	{
+		if (get_elapsed_ms(coder->request_time) >= burnout_time)
+		{
+			print_status(coder, "is burned out");
+			exit(1);
+		}
 		if (dongle->state == DONGLE_STATE_COOLDOWN
 			&& get_current_ms() >= dongle->cooldown_end)
 			dongle->state = DONGLE_STATE_AVAILABLE;
@@ -76,11 +91,15 @@ void	get_single_dongle(t_dongle *dongle, t_coder *coder)
 			break ;
 		if (dongle->state == DONGLE_STATE_COOLDOWN)
 		{
-			ts = convert_ms_to_timespec(dongle->cooldown_end);
+			wake_time = ft_min(dongle->cooldown_end, burnout_time);
+			ts = convert_ms_to_timespec(wake_time);
 			pthread_cond_timedwait(&dongle->cond, &dongle->mutex, &ts);
 		}
 		else
-			pthread_cond_wait(&dongle->cond, &dongle->mutex);
+		{
+			ts = convert_ms_to_timespec(burnout_time);
+			pthread_cond_timedwait(&dongle->cond, &dongle->mutex, &ts);
+		}
 	}
 	dongle->state = DONGLE_STATE_USING;
 	free(pop_pq(dongle->pq));

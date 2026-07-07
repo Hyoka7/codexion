@@ -6,7 +6,7 @@
 /*   By: hfujisad <hfujisad@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/29 20:58:16 by hfujisad          #+#    #+#             */
-/*   Updated: 2026/07/07 18:27:17 by hfujisad         ###   ########.fr       */
+/*   Updated: 2026/07/07 18:52:21 by hfujisad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,6 +77,7 @@ typedef struct s_coder
 	int				(*cmp)(const t_pqnode *, const t_pqnode *);
 }					t_coder;
 
+void				print_status(t_coder *coder, const char *status);
 t_pq				*create_pq(int num_coders);
 void				push_pq(t_pq *queue, int coder_id, long long time_data);
 t_pqnode			*pop_pq(t_pq *q);
@@ -93,3 +94,5 @@ void				release_dongles(t_coder *coder);
 void				release_single_dongle(t_dongle *dongle, int *conf);
 t_dongle			*init_dongles(int *conf);
 t_coder				*init_coders(int *conf);
+int					mainloop(int *conf, t_dongle *dongles, t_coder *coders,
+						char *scheduler);
