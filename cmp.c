@@ -6,7 +6,7 @@
 /*   By: hfujisad <hfujisad@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/07/07 17:53:40 by hfujisad          #+#    #+#             */
-/*   Updated: 2026/07/07 17:54:10 by hfujisad         ###   ########.fr       */
+/*   Updated: 2026/08/05 20:15:29 by hfujisad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,9 @@ int	cmp_fifo(const t_pqnode *a, const t_pqnode *b)
 		return (-1);
 	if (a->queue_seconds > b->queue_seconds)
 		return (1);
-	return (0);
+	if (a->fifo_rank < b->fifo_rank)
+		return (-1);
+	return (1);
 }
 
 int	cmp_edf(const t_pqnode *a, const t_pqnode *b)
@@ -27,7 +29,6 @@ int	cmp_edf(const t_pqnode *a, const t_pqnode *b)
 		return (-1);
 	if (a->queue_seconds > b->queue_seconds)
 		return (1);
-
 	if (a->coder_id < b->coder_id)
 		return (-1);
 	return (1);

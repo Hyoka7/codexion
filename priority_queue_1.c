@@ -6,7 +6,7 @@
 /*   By: hfujisad <hfujisad@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/29 21:06:36 by hfujisad          #+#    #+#             */
-/*   Updated: 2026/07/07 17:06:28 by hfujisad         ###   ########.fr       */
+/*   Updated: 2026/08/05 20:45:51 by hfujisad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,11 +28,12 @@ t_pq	*create_pq(int num_coders)
 		return (NULL);
 	}
 	pq->size = 0;
+	pq->next_fifo_rank = 0;
 	pq->cmp = NULL;
 	return (pq);
 }
 
-static t_pqnode	*create_new_node(int coder_id, long long time_data)
+static t_pqnode	*create_new_node(t_pq *pq, int coder_id, long long time_data)
 {
 	t_pqnode	*new_node;
 
@@ -42,20 +43,22 @@ static t_pqnode	*create_new_node(int coder_id, long long time_data)
 		return (NULL);
 	}
 	new_node->coder_id = coder_id;
+	new_node->fifo_rank = pq->next_fifo_rank;
+	pq->next_fifo_rank += 1;
 	new_node->queue_seconds = time_data;
 	return (new_node);
 }
 
-void	push_pq(t_pq *queue, int coder_id, long long time_data)
+int	push_pq(t_pq *queue, int coder_id, long long time_data)
 {
 	size_t		new_node_i;
 	size_t		cmp_i;
 	t_pqnode	*temp;
 	t_pqnode	*new_node;
 
-	new_node = create_new_node(coder_id, time_data);
+	new_node = create_new_node(queue, coder_id, time_data);
 	if (!new_node)
-		return ;
+		return (FAILURE);
 	queue->queue[queue->size++] = new_node;
 	new_node_i = queue->size - 1;
 	while (new_node_i)
@@ -71,6 +74,7 @@ void	push_pq(t_pq *queue, int coder_id, long long time_data)
 		else
 			break ;
 	}
+	return (SUCCESS);
 }
 
 static void	swap_pqnode(t_pqnode **a, t_pqnode **b)

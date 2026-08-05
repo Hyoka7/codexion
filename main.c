@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   main.c                                             :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: hfujisad <hfujisad@student.42tokyo.jp>     +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/08/04 17:30:10 by hfujisad          #+#    #+#             */
+/*   Updated: 2026/08/04 17:30:13 by hfujisad         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "codexion.h"
 
 static void	cleanup_all(int *conf, t_dongle *dongles, t_coder *coders)
@@ -25,20 +37,17 @@ static void	cleanup_all(int *conf, t_dongle *dongles, t_coder *coders)
 
 int	main(int argc, char *argv[])
 {
-	char *scheduler;
-	int *conf;
-	t_dongle *dongles;
-	t_coder *coders;
+	char		*scheduler;
+	int			*conf;
+	t_dongle	*dongles;
+	t_coder		*coders;
+	int			status;
 
 	if (argc != 9)
 		return (1);
-
-	// 1. 引数のパース
 	conf = parser(argv, &scheduler);
 	if (!conf)
 		return (1);
-
-	// 2. ドングルとコーダーのメモリ確保・初期化
 	dongles = init_dongles(conf);
 	coders = init_coders(conf);
 	if (!dongles || !coders)
@@ -46,11 +55,7 @@ int	main(int argc, char *argv[])
 		cleanup_all(conf, dongles, coders);
 		return (1);
 	}
-
-	// 3. メインルーチンの実行
-	mainloop(conf, dongles, coders, scheduler);
-
-	// 4. 完全なクリーンアップをして終了（リークゼロ）
+	status = mainloop(conf, dongles, coders, scheduler);
 	cleanup_all(conf, dongles, coders);
-	return (0);
+	return (status);
 }

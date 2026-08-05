@@ -14,13 +14,11 @@
 
 t_coder	*init_coders(int *conf)
 {
-	t_coder *coders;
-	int total_threads;
+	t_coder	*coders;
 
-	total_threads = conf[NUM_OF_CODERS] + 1;
-	coders = malloc(sizeof(t_coder) * total_threads);
+	coders = malloc(sizeof(t_coder) * conf[NUM_OF_CODERS]);
 	if (!coders)
 		return (NULL);
-	memset(coders, 0, sizeof(t_coder) * total_threads);
+	memset(coders, 0, sizeof(t_coder) * conf[NUM_OF_CODERS]);
 	return (coders);
 }

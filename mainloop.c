@@ -1,93 +1,205 @@
 #include "codexion.h"
 #include <stdio.h>
 
-// ログ出力を安全に行うためのミューテックス（混ざり防止）
-static pthread_mutex_t	g_log_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 void	print_status(t_coder *coder, const char *status)
 {
-	pthread_mutex_lock(&g_log_mutex);
-	printf("%lld %d %s\n", get_elapsed_ms(coder->request_time), coder->coder_id,
-		status);
-	pthread_mutex_unlock(&g_log_mutex);
+	t_sim	*sim;
+
+	sim = coder->sim;
+	pthread_mutex_lock(&sim->log_mutex);
+	pthread_mutex_lock(&sim->state_mutex);
+	if (!sim->stopped)
+		printf("%lld %d %s\n", get_elapsed_ms(sim->start_time), coder->coder_id,
+			status);
+	pthread_mutex_unlock(&sim->state_mutex);
+	pthread_mutex_unlock(&sim->log_mutex);
 }
 
-// 各コーダースレッドが走らせる無限ループ（または指定回数ループ）
+static int	sim_sleep(t_sim *sim, long long duration)
+{
+	long long	end;
+	int			stopped;
+
+	end = get_current_ms() + duration;
+	while (get_current_ms() < end)
+	{
+		pthread_mutex_lock(&sim->state_mutex);
+		stopped = sim->stopped;
+		pthread_mutex_unlock(&sim->state_mutex);
+		if (stopped)
+			return (0);
+		usleep(500);
+	}
+	return (1);
+}
+
 void	*coder_routine(void *arg)
 {
 	t_coder	*coder;
-	int		compile_count;
 
 	coder = (t_coder *)arg;
-	compile_count = 0;
-	// 初回の「前回のコンパイル開始時刻」を生時刻の0ms地点として同期
-	coder->last_complie_start = 0;
-	// 指定されたコンパイル回数に達するまでループ
-	while (compile_count < coder->conf[NUMBERS_OF_COMPILES_REQUIRED])
+	while (coder->compile_count < coder->conf[NUMBERS_OF_COMPILES_REQUIRED])
 	{
-		// 1. ドングルを2本安全に取得（ID順ソートによりデッドロックフリー）
-		get_dongles(coder);
-		// 2. コンパイル開始（EDF用のスコア起点として時刻を記録）
-		coder->last_complie_start = get_elapsed_ms(coder->request_time);
+		if (get_dongles(coder) == FAILURE)
+			return (NULL);
+		pthread_mutex_lock(&coder->sim->state_mutex);
+		coder->last_compile_start = get_current_ms();
+		pthread_cond_broadcast(&coder->sim->state_cond);
+		pthread_mutex_unlock(&coder->sim->state_mutex);
 		print_status(coder, "is compiling");
-		usleep(coder->conf[TIME_TO_COMPILE_MS] * 1000);
-		compile_count++;
-		// 3. 使い終わったので2本とも解放（クールダウンへ移行）
+		if (!sim_sleep(coder->sim, coder->conf[TIME_TO_COMPILE_MS]))
+			return (release_dongles(coder), NULL);
+		pthread_mutex_lock(&coder->sim->state_mutex);
+		coder->compile_count++;
+		if (coder->compile_count == coder->conf[NUMBERS_OF_COMPILES_REQUIRED])
+			coder->done = 1;
+		pthread_cond_broadcast(&coder->sim->state_cond);
+		pthread_mutex_unlock(&coder->sim->state_mutex);
 		release_dongles(coder);
-		// 指定回数をクリアしたら、最後のデバッグとリファクタリングはスキップして終了
-		if (compile_count == coder->conf[NUMBERS_OF_COMPILES_REQUIRED])
+		if (coder->done)
 			break ;
-		// 4. デバッグフェーズ
 		print_status(coder, "is debugging");
-		usleep(coder->conf[TIME_TO_DEBUG_MS] * 1000);
-		// 5. リファクタリングフェーズ
+		if (!sim_sleep(coder->sim, coder->conf[TIME_TO_DEBUG_MS]))
+			return (NULL);
 		print_status(coder, "is refactoring");
-		usleep(coder->conf[TIME_TO_REFACTOR_MS] * 1000);
+		if (!sim_sleep(coder->sim, coder->conf[TIME_TO_REFACTOR_MS]))
+			return (NULL);
 	}
 	return (NULL);
 }
 
-int	mainloop(int *conf, t_dongle *dongles, t_coder *coders, char *scheduler)
+static void	stop_and_wake(t_sim *sim)
 {
-	int i;
-	long long start_time;
-	int is_edf;
+	int	i;
 
-	start_time = get_current_ms();
-	is_edf = (strcmp(scheduler, "edf") == 0);
+	pthread_cond_broadcast(&sim->state_cond);
 	i = 0;
-
-	// 1. 全コーダーの構造体にデータを配り、円卓状にドングルを割り当てる
-	while (i < conf[NUM_OF_CODERS])
+	while (i < sim->conf[NUM_OF_CODERS])
 	{
-		coders[i].coder_id = i + 1;
-		coders[i].request_time = start_time;
-		coders[i].conf = conf;
-		coders[i].is_edf = is_edf;
-		coders[i].cmp = is_edf ? cmp_edf : cmp_fifo;
-
-		// 円卓の割り当て（左は自分と同じID、右は隣のID。最後の人だけ0番に戻る）
-		coders[i].dongle_l = &dongles[i];
-		coders[i].dongle_r = &dongles[(i + 1) % conf[NUM_OF_CODERS]];
+		pthread_mutex_lock(&sim->dongles[i].mutex);
+		pthread_cond_broadcast(&sim->dongles[i].cond);
+		pthread_mutex_unlock(&sim->dongles[i].mutex);
 		i++;
 	}
+}
 
-	// 2. 一斉にスレッドを起動
+static void	print_burnout(t_sim *sim, int i)
+{
+	pthread_mutex_lock(&sim->log_mutex);
+	printf("%lld %d burned out\n", get_elapsed_ms(sim->start_time),
+		sim->coders[i].coder_id);
+	pthread_mutex_unlock(&sim->log_mutex);
+}
+
+static void	*monitor_routine(void *arg)
+{
+	t_sim		*sim;
+	long long	now;
+	int			i;
+	int			all_done;
+
+	sim = (t_sim *)arg;
+	while (1)
+	{
+		pthread_mutex_lock(&sim->state_mutex);
+		now = get_current_ms();
+		i = 0;
+		all_done = 1;
+		while (i < sim->conf[NUM_OF_CODERS])
+		{
+			if (!sim->coders[i].done)
+				all_done = 0;
+			if (!sim->coders[i].done && now >= sim->coders[i].last_compile_start
+				+ sim->conf[TIME_TO_BURNOUT_MS])
+				break ;
+			i++;
+		}
+		if (i < sim->conf[NUM_OF_CODERS] || all_done)
+		{
+			sim->stopped = 1;
+			pthread_mutex_unlock(&sim->state_mutex);
+			if (!all_done)
+				print_burnout(sim, i);
+			return (stop_and_wake(sim), NULL);
+		}
+		pthread_mutex_unlock(&sim->state_mutex);
+		usleep(500);
+	}
+}
+
+static int	init_sim(t_sim *sim, int *conf, t_dongle *dongles, t_coder *coders)
+{
+	memset(sim, 0, sizeof(*sim));
+	sim->conf = conf;
+	sim->start_time = get_current_ms();
+	sim->coders = coders;
+	sim->dongles = dongles;
+	if (pthread_mutex_init(&sim->state_mutex, NULL) != 0)
+		return (0);
+	if (pthread_cond_init(&sim->state_cond, NULL) != 0)
+		return (pthread_mutex_destroy(&sim->state_mutex), 0);
+	if (pthread_mutex_init(&sim->log_mutex, NULL) != 0)
+		return (pthread_cond_destroy(&sim->state_cond),
+			pthread_mutex_destroy(&sim->state_mutex), 0);
+	return (1);
+}
+
+static void	init_coder_data(t_sim *sim, char *scheduler)
+{
+	int	i;
+	int	is_edf;
+
+	is_edf = (strcmp(scheduler, "edf") == 0);
+	i = 0;
+	while (i < sim->conf[NUM_OF_CODERS])
+	{
+		sim->coders[i].coder_id = i + 1;
+		sim->coders[i].request_time = sim->start_time;
+		sim->coders[i].last_compile_start = sim->start_time;
+		sim->coders[i].conf = sim->conf;
+		sim->coders[i].is_edf = is_edf;
+		sim->coders[i].cmp = is_edf ? cmp_edf : cmp_fifo;
+		sim->coders[i].sim = sim;
+		sim->coders[i].dongle_l = &sim->dongles[i];
+		sim->coders[i].dongle_r = &sim->dongles[(i + 1)
+			% sim->conf[NUM_OF_CODERS]];
+		i++;
+	}
+}
+
+int	mainloop(int *conf, t_dongle *dongles, t_coder *coders, char *scheduler)
+{
+	t_sim		sim;
+	pthread_t	monitor;
+	int			i;
+	int			monitor_created;
+
+	if (!init_sim(&sim, conf, dongles, coders))
+		return (1);
+	init_coder_data(&sim, scheduler);
 	i = 0;
 	while (i < conf[NUM_OF_CODERS])
 	{
 		if (pthread_create(&coders[i].thread_id, NULL, coder_routine,
 				&coders[i]) != 0)
-			return (1);
+			break ;
 		i++;
 	}
-
-	// 3. 全員が作業を終えるのを待つ
-	i = 0;
-	while (i < conf[NUM_OF_CODERS])
+	monitor_created = (i == conf[NUM_OF_CODERS] && pthread_create(&monitor,
+				NULL, monitor_routine, &sim) == 0);
+	if (!monitor_created)
 	{
-		pthread_join(coders[i].thread_id, NULL);
-		i++;
+		pthread_mutex_lock(&sim.state_mutex);
+		sim.stopped = 1;
+		pthread_mutex_unlock(&sim.state_mutex);
+		stop_and_wake(&sim);
 	}
-	return (0);
+	else
+		pthread_join(monitor, NULL);
+	while (i-- > 0)
+		pthread_join(coders[i].thread_id, NULL);
+	pthread_mutex_destroy(&sim.log_mutex);
+	pthread_cond_destroy(&sim.state_cond);
+	pthread_mutex_destroy(&sim.state_mutex);
+	return (!monitor_created);
 }
