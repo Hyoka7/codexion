@@ -6,7 +6,7 @@
 /*   By: hfujisad <hfujisad@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/07/06 18:23:50 by hfujisad          #+#    #+#             */
-/*   Updated: 2026/08/05 21:04:29 by hfujisad         ###   ########.fr       */
+/*   Updated: 2026/08/06 15:16:21 by hfujisad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,12 +73,12 @@ t_dongle	*init_dongles(int *conf)
 
 static int	simulation_stopped(t_sim *sim)
 {
-	int	stopped;
+	int	simstate;
 
 	pthread_mutex_lock(&sim->state_mutex);
-	stopped = sim->stopped;
+	simstate = sim->simstate;
 	pthread_mutex_unlock(&sim->state_mutex);
-	return (stopped);
+	return (simstate);
 }
 
 int	get_single_dongle(t_dongle *dongle, t_coder *coder)
@@ -95,6 +95,10 @@ int	get_single_dongle(t_dongle *dongle, t_coder *coder)
 	dongle->pq->cmp = coder->cmp;
 	if (push_pq(dongle->pq, coder->coder_id, time_data) == FAILURE)
 	{
+		pthread_mutex_lock(&coder->sim->state_mutex);
+		if (coder->sim->simstate == IN_PROGRESS)
+			coder->sim->simstate = INTERNAL_ERROR;
+		pthread_mutex_unlock(&coder->sim->state_mutex);
 		pthread_mutex_unlock(&dongle->mutex);
 		return (FAILURE);
 	}

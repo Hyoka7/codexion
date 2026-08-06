@@ -6,7 +6,7 @@
 /*   By: hfujisad <hfujisad@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/29 20:58:16 by hfujisad          #+#    #+#             */
-/*   Updated: 2026/08/05 20:45:31 by hfujisad         ###   ########.fr       */
+/*   Updated: 2026/08/06 14:28:47 by hfujisad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,15 @@
 
 # define SUCCESS 0
 # define FAILURE 1
+
+typedef enum e_simstate
+{
+	IN_PROGRESS,
+	COMPLETED,
+	BURN_OUT,
+	INTERNAL_ERROR,
+	SIMSTATE_MAX
+}						t_simstate;
 
 typedef struct s_pqnode
 {
@@ -94,7 +103,7 @@ struct					s_sim
 {
 	int					*conf;
 	long long			start_time;
-	int					stopped;
+	t_simstate			simstate;
 	t_coder				*coders;
 	t_dongle			*dongles;
 	pthread_mutex_t		state_mutex;

@@ -8,7 +8,7 @@ void	print_status(t_coder *coder, const char *status)
 	sim = coder->sim;
 	pthread_mutex_lock(&sim->log_mutex);
 	pthread_mutex_lock(&sim->state_mutex);
-	if (!sim->stopped)
+	if (sim->simstate == IN_PROGRESS)
 		printf("%lld %d %s\n", get_elapsed_ms(sim->start_time), coder->coder_id,
 			status);
 	pthread_mutex_unlock(&sim->state_mutex);
@@ -18,15 +18,15 @@ void	print_status(t_coder *coder, const char *status)
 static int	sim_sleep(t_sim *sim, long long duration)
 {
 	long long	end;
-	int			stopped;
+	int			simstate;
 
 	end = get_current_ms() + duration;
 	while (get_current_ms() < end)
 	{
 		pthread_mutex_lock(&sim->state_mutex);
-		stopped = sim->stopped;
+		simstate = sim->simstate;
 		pthread_mutex_unlock(&sim->state_mutex);
-		if (stopped)
+		if (simstate != IN_PROGRESS)
 			return (0);
 		usleep(500);
 	}
@@ -102,6 +102,11 @@ static void	*monitor_routine(void *arg)
 	while (1)
 	{
 		pthread_mutex_lock(&sim->state_mutex);
+		if (sim->simstate != IN_PROGRESS)
+		{
+			pthread_mutex_unlock(&sim->state_mutex);
+			return (stop_and_wake(sim), NULL);
+		}
 		now = get_current_ms();
 		i = 0;
 		all_done = 1;
@@ -116,13 +121,19 @@ static void	*monitor_routine(void *arg)
 		}
 		if (i < sim->conf[NUM_OF_CODERS] || all_done)
 		{
-			sim->stopped = 1;
-			pthread_mutex_unlock(&sim->state_mutex);
+			sim->simstate = COMPLETED;
 			if (!all_done)
+			{
+				sim->simstate = BURN_OUT;
+				pthread_mutex_unlock(&sim->state_mutex);
 				print_burnout(sim, i);
+			}
+			else
+				pthread_mutex_unlock(&sim->state_mutex);
 			return (stop_and_wake(sim), NULL);
 		}
-		pthread_mutex_unlock(&sim->state_mutex);
+		else
+			pthread_mutex_unlock(&sim->state_mutex);
 		usleep(500);
 	}
 }
@@ -172,6 +183,7 @@ int	mainloop(int *conf, t_dongle *dongles, t_coder *coders, char *scheduler)
 	t_sim		sim;
 	pthread_t	monitor;
 	int			i;
+	int			simres;
 	int			monitor_created;
 
 	if (!init_sim(&sim, conf, dongles, coders))
@@ -190,7 +202,7 @@ int	mainloop(int *conf, t_dongle *dongles, t_coder *coders, char *scheduler)
 	if (!monitor_created)
 	{
 		pthread_mutex_lock(&sim.state_mutex);
-		sim.stopped = 1;
+		sim.simstate = INTERNAL_ERROR;
 		pthread_mutex_unlock(&sim.state_mutex);
 		stop_and_wake(&sim);
 	}
@@ -198,8 +210,14 @@ int	mainloop(int *conf, t_dongle *dongles, t_coder *coders, char *scheduler)
 		pthread_join(monitor, NULL);
 	while (i-- > 0)
 		pthread_join(coders[i].thread_id, NULL);
+	pthread_mutex_lock(&sim.state_mutex);
+	if (sim.simstate == INTERNAL_ERROR)
+		simres = FAILURE;
+	else
+		simres = SUCCESS;
+	pthread_mutex_unlock(&sim.state_mutex);
 	pthread_mutex_destroy(&sim.log_mutex);
 	pthread_cond_destroy(&sim.state_cond);
 	pthread_mutex_destroy(&sim.state_mutex);
-	return (!monitor_created);
+	return (simres);
 }
