@@ -6,7 +6,7 @@
 /*   By: hfujisad <hfujisad@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/07/06 18:23:50 by hfujisad          #+#    #+#             */
-/*   Updated: 2026/08/06 15:16:21 by hfujisad         ###   ########.fr       */
+/*   Updated: 2026/08/06 20:58:54 by hfujisad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,6 +81,27 @@ static int	simulation_stopped(t_sim *sim)
 	return (simstate);
 }
 
+static void	update_dongle_state(long long now_time, t_dongle *dongle)
+{
+	if (dongle->cooldown_end <= now_time
+		&& dongle->state == DONGLE_STATE_COOLDOWN)
+		dongle->state = DONGLE_STATE_AVAILABLE;
+}
+
+static int	try_to_push(t_dongle *dongle, t_coder *coder, long long time_data)
+{
+	dongle->pq->cmp = coder->cmp;
+	if (push_pq(dongle->pq, coder->coder_id, time_data) == FAILURE)
+	{
+		pthread_mutex_lock(&coder->sim->state_mutex);
+		if (coder->sim->simstate == IN_PROGRESS)
+			coder->sim->simstate = INTERNAL_ERROR;
+		pthread_mutex_unlock(&coder->sim->state_mutex);
+		return (FAILURE);
+	}
+	return (SUCCESS);
+}
+
 int	get_single_dongle(t_dongle *dongle, t_coder *coder)
 {
 	long long		time_data;
@@ -92,13 +113,8 @@ int	get_single_dongle(t_dongle *dongle, t_coder *coder)
 	else
 		time_data = get_elapsed_ms(coder->request_time);
 	pthread_mutex_lock(&dongle->mutex);
-	dongle->pq->cmp = coder->cmp;
-	if (push_pq(dongle->pq, coder->coder_id, time_data) == FAILURE)
+	if (try_to_push(dongle, coder, time_data) == FAILURE)
 	{
-		pthread_mutex_lock(&coder->sim->state_mutex);
-		if (coder->sim->simstate == IN_PROGRESS)
-			coder->sim->simstate = INTERNAL_ERROR;
-		pthread_mutex_unlock(&coder->sim->state_mutex);
 		pthread_mutex_unlock(&dongle->mutex);
 		return (FAILURE);
 	}
@@ -109,9 +125,7 @@ int	get_single_dongle(t_dongle *dongle, t_coder *coder)
 			pthread_mutex_unlock(&dongle->mutex);
 			return (FAILURE);
 		}
-		if (dongle->state == DONGLE_STATE_COOLDOWN
-			&& get_current_ms() >= dongle->cooldown_end)
-			dongle->state = DONGLE_STATE_AVAILABLE;
+		update_dongle_state(get_current_ms(), dongle);
 		if (dongle->pq->queue[0]->coder_id == coder->coder_id
 			&& dongle->state == DONGLE_STATE_AVAILABLE)
 			break ;
@@ -134,21 +148,20 @@ int	get_single_dongle(t_dongle *dongle, t_coder *coder)
 	return (SUCCESS);
 }
 
-int	get_dongles(t_coder *coder)
+static void	rank_dongles(t_dongle **first, t_dongle **second)
 {
-	t_dongle	*first;
-	t_dongle	*second;
+	t_dongle	*tmp;
 
-	if (coder->dongle_l->dongle_id < coder->dongle_r->dongle_id)
+	if ((*first)->dongle_id > (*second)->dongle_id)
 	{
-		first = coder->dongle_l;
-		second = coder->dongle_r;
+		tmp = *first;
+		*first = *second;
+		*second = tmp;
 	}
-	else
-	{
-		first = coder->dongle_r;
-		second = coder->dongle_l;
-	}
+}
+
+static int	get_two_dongle(t_coder *coder, t_dongle *first, t_dongle *second)
+{
 	if (get_single_dongle(first, coder) == FAILURE)
 		return (FAILURE);
 	if (get_single_dongle(second, coder) == FAILURE)
@@ -157,6 +170,17 @@ int	get_dongles(t_coder *coder)
 		return (FAILURE);
 	}
 	return (SUCCESS);
+}
+
+int	get_dongles(t_coder *coder)
+{
+	t_dongle	*first;
+	t_dongle	*second;
+
+	first = coder->dongle_l;
+	second = coder->dongle_r;
+	rank_dongles(&first, &second);
+	return (get_two_dongle(coder, first, second));
 }
 
 void	release_single_dongle(t_dongle *dongle, int *conf)
