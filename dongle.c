@@ -12,6 +12,8 @@
 
 #include "codexion.h"
 
+static void	release_single_dongle(t_dongle *dongle, int *conf);
+
 static long long	ft_max(long long a, long long b)
 {
 	if (a < b)
@@ -190,7 +192,7 @@ static bool	are_dongles_for_me(t_coder *coder, t_dongle *first,
 	return (false);
 }
 
-int	get_single_dongle(t_dongle *dongle, t_coder *coder)
+static int	get_single_dongle(t_dongle *dongle, t_coder *coder)
 {
 	long long		time_data;
 	long long		wake_time;
@@ -319,7 +321,7 @@ int	get_dongles(t_coder *coder)
 		return (atomic_get_dongle(coder, first, second));
 }
 
-void	release_single_dongle(t_dongle *dongle, int *conf)
+static void	release_single_dongle(t_dongle *dongle, int *conf)
 {
 	pthread_mutex_lock(&dongle->mutex);
 	dongle->state = DONGLE_STATE_COOLDOWN;

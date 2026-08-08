@@ -33,7 +33,7 @@ static int	sim_sleep(t_sim *sim, long long duration)
 	return (1);
 }
 
-void	*coder_routine(void *arg)
+static void	*coder_routine(void *arg)
 {
 	t_coder	*coder;
 

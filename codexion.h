@@ -122,10 +122,8 @@ long long				get_elapsed_ms(long long ms_start);
 struct timespec			convert_ms_to_timespec(long long time_in_ms);
 int						cmp_edf(const t_pqnode *a, const t_pqnode *b);
 int						cmp_fifo(const t_pqnode *a, const t_pqnode *b);
-int						get_single_dongle(t_dongle *dongle, t_coder *coder);
 int						get_dongles(t_coder *coder);
 void					release_dongles(t_coder *coder);
-void					release_single_dongle(t_dongle *dongle, int *conf);
 t_dongle				*init_dongles(int *conf);
 t_coder					*init_coders(int *conf);
 int						mainloop(int *conf, t_dongle *dongles, t_coder *coders,

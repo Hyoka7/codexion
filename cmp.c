@@ -12,7 +12,7 @@
 
 #include "codexion.h"
 
-int	cmp_fifo(const t_pqnode *a, const t_pqnode *b)
+int cmp_fifo(const t_pqnode *a, const t_pqnode *b)
 {
 	if (a->queue_seconds < b->queue_seconds)
 		return (-1);
@@ -20,10 +20,12 @@ int	cmp_fifo(const t_pqnode *a, const t_pqnode *b)
 		return (1);
 	if (a->fifo_rank < b->fifo_rank)
 		return (-1);
-	return (1);
+	if (a->fifo_rank > b->fifo_rank)
+		return (1);
+	return (0);
 }
 
-int	cmp_edf(const t_pqnode *a, const t_pqnode *b)
+int cmp_edf(const t_pqnode *a, const t_pqnode *b)
 {
 	if (a->queue_seconds < b->queue_seconds)
 		return (-1);
@@ -31,5 +33,7 @@ int	cmp_edf(const t_pqnode *a, const t_pqnode *b)
 		return (1);
 	if (a->coder_id < b->coder_id)
 		return (-1);
-	return (1);
+	if (a->coder_id > b->coder_id)
+		return (1);
+	return (0);
 }
