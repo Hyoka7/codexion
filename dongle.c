@@ -12,25 +12,25 @@
 
 #include "codexion.h"
 
-static void	release_single_dongle(t_dongle *dongle, int *conf);
+static void release_single_dongle(t_dongle *dongle, int *conf);
 
-static long long	ft_max(long long a, long long b)
+static long long ft_max(long long a, long long b)
 {
 	if (a < b)
 		return (b);
 	return (a);
 }
-static long long	ft_min(long long a, long long b)
+static long long ft_min(long long a, long long b)
 {
 	if (a > b)
 		return (b);
 	return (a);
 }
 
-static t_dongle	*free_dongles(t_dongle *dongles, int size, bool is_mutex,
-		bool is_cond)
+static t_dongle *free_dongles(t_dongle *dongles, int size, bool is_mutex,
+							  bool is_cond)
 {
-	int	idx;
+	int idx;
 
 	if (!dongles)
 		return (NULL);
@@ -53,10 +53,10 @@ static t_dongle	*free_dongles(t_dongle *dongles, int size, bool is_mutex,
 	return (NULL);
 }
 
-t_dongle	*init_dongles(int *conf)
+t_dongle *init_dongles(int *conf)
 {
-	t_dongle	*dongles;
-	int			idx;
+	t_dongle *dongles;
+	int idx;
 
 	dongles = malloc(sizeof(t_dongle) * conf[NUM_OF_CODERS]);
 	if (!dongles)
@@ -79,9 +79,9 @@ t_dongle	*init_dongles(int *conf)
 	return (dongles);
 }
 
-static int	simulation_stopped(t_sim *sim)
+static int simulation_stopped(t_sim *sim)
 {
-	int	simstate;
+	int simstate;
 
 	pthread_mutex_lock(&sim->state_mutex);
 	simstate = sim->simstate;
@@ -89,14 +89,13 @@ static int	simulation_stopped(t_sim *sim)
 	return (simstate);
 }
 
-static void	update_dongle_state(long long now_time, t_dongle *dongle)
+static void update_dongle_state(long long now_time, t_dongle *dongle)
 {
-	if (dongle->cooldown_end <= now_time
-		&& dongle->state == DONGLE_STATE_COOLDOWN)
+	if (dongle->cooldown_end <= now_time && dongle->state == DONGLE_STATE_COOLDOWN)
 		dongle->state = DONGLE_STATE_AVAILABLE;
 }
 
-static int	try_to_push(t_dongle *dongle, t_coder *coder, long long time_data)
+static int try_to_push(t_dongle *dongle, t_coder *coder, long long time_data)
 {
 	dongle->pq->cmp = coder->cmp;
 	if (push_pq(dongle->pq, coder->coder_id, time_data) == FAILURE)
@@ -109,22 +108,22 @@ static int	try_to_push(t_dongle *dongle, t_coder *coder, long long time_data)
 	}
 	return (SUCCESS);
 }
-static void	just_unlock(t_dongle *first, t_dongle *second)
+static void just_unlock(t_dongle *first, t_dongle *second)
 {
 	pthread_mutex_unlock(&first->mutex);
 	pthread_mutex_unlock(&second->mutex);
 }
 
-static void	just_lock(t_dongle *first, t_dongle *second)
+static void just_lock(t_dongle *first, t_dongle *second)
 {
 	pthread_mutex_lock(&first->mutex);
 	pthread_mutex_lock(&second->mutex);
 }
 
-static long long	get_dongle_waketime(t_dongle *first, t_dongle *second)
+static long long get_dongle_waketime(t_dongle *first, t_dongle *second)
 {
-	long long	first_wake;
-	long long	second_wake;
+	long long first_wake;
+	long long second_wake;
 
 	if (first->state == DONGLE_STATE_COOLDOWN)
 		first_wake = first->cooldown_end;
@@ -137,10 +136,11 @@ static long long	get_dongle_waketime(t_dongle *first, t_dongle *second)
 	return (ft_max(first_wake, second_wake));
 }
 
-static int	wait_for_dongles(t_coder *coder, t_dongle *first, t_dongle *second)
+static int wait_for_dongles(t_coder *coder, t_dongle *first, t_dongle *second)
 {
-	long long		waketime;
-	struct timespec	ts;
+	long long waketime;
+	int wait_res;
+	struct timespec ts;
 
 	waketime = get_dongle_waketime(first, second);
 	pthread_mutex_lock(&coder->sim->state_mutex);
@@ -151,21 +151,25 @@ static int	wait_for_dongles(t_coder *coder, t_dongle *first, t_dongle *second)
 	}
 	just_unlock(second, first);
 	if (waketime == 0)
-		pthread_cond_wait(&coder->sim->state_cond, &coder->sim->state_mutex);
+		wait_res = pthread_cond_wait(&coder->sim->state_cond, &coder->sim->state_mutex);
 	else
 	{
 		ts = convert_ms_to_timespec(waketime);
-		pthread_cond_timedwait(&coder->sim->state_cond,
-			&coder->sim->state_mutex, &ts);
+		wait_res = pthread_cond_timedwait(&coder->sim->state_cond,
+										  &coder->sim->state_mutex, &ts);
 	}
+	if (wait_res != SUCCESS && wait_res != ETIMEDOUT)
+		coder->sim->simstate = INTERNAL_ERROR;
 	pthread_mutex_unlock(&coder->sim->state_mutex);
 	just_lock(first, second);
+	if (wait_res != SUCCESS && wait_res != ETIMEDOUT)
+		return (FAILURE);
 	return (SUCCESS);
 }
 
-static long long	get_time_data(t_coder *coder)
+static long long get_time_data(t_coder *coder)
 {
-	long long	time_data;
+	long long time_data;
 
 	if (coder->is_edf)
 		time_data = coder->last_compile_start + coder->conf[TIME_TO_BURNOUT_MS];
@@ -174,29 +178,29 @@ static long long	get_time_data(t_coder *coder)
 	return (time_data);
 }
 
-static bool	is_dongle_for_me(t_coder *coder, t_dongle *dongle)
+static bool is_dongle_for_me(t_coder *coder, t_dongle *dongle)
 {
 	if (dongle->pq->size == 0)
 		return (false);
-	if (dongle->pq->queue[0]->coder_id == coder->coder_id
-		&& dongle->state == DONGLE_STATE_AVAILABLE)
+	if (dongle->pq->queue[0]->coder_id == coder->coder_id && dongle->state == DONGLE_STATE_AVAILABLE)
 		return (true);
 	return (false);
 }
 
-static bool	are_dongles_for_me(t_coder *coder, t_dongle *first,
-		t_dongle *second)
+static bool are_dongles_for_me(t_coder *coder, t_dongle *first,
+							   t_dongle *second)
 {
 	if (is_dongle_for_me(coder, first) && is_dongle_for_me(coder, second))
 		return (true);
 	return (false);
 }
 
-static int	get_single_dongle(t_dongle *dongle, t_coder *coder)
+static int get_single_dongle(t_dongle *dongle, t_coder *coder)
 {
-	long long		time_data;
-	long long		wake_time;
-	struct timespec	ts;
+	long long time_data;
+	long long wake_time;
+	int wait_res;
+	struct timespec ts;
 
 	time_data = get_time_data(coder);
 	pthread_mutex_lock(&dongle->mutex);
@@ -214,17 +218,25 @@ static int	get_single_dongle(t_dongle *dongle, t_coder *coder)
 		}
 		update_dongle_state(get_current_ms(), dongle);
 		if (is_dongle_for_me(coder, dongle))
-			break ;
+			break;
 		if (dongle->state == DONGLE_STATE_COOLDOWN)
 		{
 			wake_time = ft_min(dongle->cooldown_end, get_current_ms() + 1);
 			ts = convert_ms_to_timespec(wake_time);
-			pthread_cond_timedwait(&dongle->cond, &dongle->mutex, &ts);
+			wait_res = pthread_cond_timedwait(&dongle->cond, &dongle->mutex, &ts);
 		}
 		else
 		{
 			ts = convert_ms_to_timespec(get_current_ms() + 1);
-			pthread_cond_timedwait(&dongle->cond, &dongle->mutex, &ts);
+			wait_res = pthread_cond_timedwait(&dongle->cond, &dongle->mutex, &ts);
+		}
+		if (wait_res != SUCCESS && wait_res != ETIMEDOUT)
+		{
+			pthread_mutex_lock(&coder->sim->state_mutex);
+			coder->sim->simstate = INTERNAL_ERROR;
+			pthread_mutex_unlock(&coder->sim->state_mutex);
+			pthread_mutex_unlock(&dongle->mutex);
+			return (FAILURE);
 		}
 	}
 	dongle->state = DONGLE_STATE_USING;
@@ -234,9 +246,9 @@ static int	get_single_dongle(t_dongle *dongle, t_coder *coder)
 	return (SUCCESS);
 }
 
-static void	rank_dongles(t_dongle **first, t_dongle **second)
+static void rank_dongles(t_dongle **first, t_dongle **second)
 {
-	t_dongle	*tmp;
+	t_dongle *tmp;
 
 	if ((*first)->dongle_id > (*second)->dongle_id)
 	{
@@ -246,8 +258,8 @@ static void	rank_dongles(t_dongle **first, t_dongle **second)
 	}
 }
 
-static int	sequence_get_dongle(t_coder *coder, t_dongle *first,
-		t_dongle *second)
+static int sequence_get_dongle(t_coder *coder, t_dongle *first,
+							   t_dongle *second)
 {
 	if (get_single_dongle(first, coder) == FAILURE)
 		return (FAILURE);
@@ -259,17 +271,17 @@ static int	sequence_get_dongle(t_coder *coder, t_dongle *first,
 	return (SUCCESS);
 }
 
-static void	grab_dongle(t_dongle *dongle)
+static void grab_dongle(t_dongle *dongle)
 {
 	dongle->state = DONGLE_STATE_USING;
 	free(pop_pq(dongle->pq));
 }
 
-static int	atomic_get_dongle(t_coder *coder, t_dongle *first, t_dongle *second)
+static int atomic_get_dongle(t_coder *coder, t_dongle *first, t_dongle *second)
 {
-	long long	current_time;
-	long long	time_data;
-	int			wait_res;
+	long long current_time;
+	long long time_data;
+	int wait_res;
 
 	pthread_mutex_lock(&first->mutex);
 	pthread_mutex_lock(&second->mutex);
@@ -307,10 +319,10 @@ static int	atomic_get_dongle(t_coder *coder, t_dongle *first, t_dongle *second)
 	}
 }
 
-int	get_dongles(t_coder *coder)
+int get_dongles(t_coder *coder)
 {
-	t_dongle	*first;
-	t_dongle	*second;
+	t_dongle *first;
+	t_dongle *second;
 
 	first = coder->dongle_l;
 	second = coder->dongle_r;
@@ -321,7 +333,7 @@ int	get_dongles(t_coder *coder)
 		return (atomic_get_dongle(coder, first, second));
 }
 
-static void	release_single_dongle(t_dongle *dongle, int *conf)
+static void release_single_dongle(t_dongle *dongle, int *conf)
 {
 	pthread_mutex_lock(&dongle->mutex);
 	dongle->state = DONGLE_STATE_COOLDOWN;
@@ -329,7 +341,7 @@ static void	release_single_dongle(t_dongle *dongle, int *conf)
 	pthread_cond_broadcast(&dongle->cond);
 	pthread_mutex_unlock(&dongle->mutex);
 }
-void	release_dongles(t_coder *coder)
+void release_dongles(t_coder *coder)
 {
 	release_single_dongle(coder->dongle_l, coder->conf);
 	release_single_dongle(coder->dongle_r, coder->conf);

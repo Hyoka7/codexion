@@ -1,24 +1,24 @@
 #include "codexion.h"
 #include <stdio.h>
 
-void	print_status(t_coder *coder, const char *status)
+void print_status(t_coder *coder, const char *status)
 {
-	t_sim	*sim;
+	t_sim *sim;
 
 	sim = coder->sim;
 	pthread_mutex_lock(&sim->log_mutex);
 	pthread_mutex_lock(&sim->state_mutex);
 	if (sim->simstate == IN_PROGRESS)
 		printf("%lld %d %s\n", get_elapsed_ms(sim->start_time), coder->coder_id,
-			status);
+			   status);
 	pthread_mutex_unlock(&sim->state_mutex);
 	pthread_mutex_unlock(&sim->log_mutex);
 }
 
-static int	sim_sleep(t_sim *sim, long long duration)
+static int sim_sleep(t_sim *sim, long long duration)
 {
-	long long	end;
-	int			simstate;
+	long long end;
+	int simstate;
 
 	end = get_current_ms() + duration;
 	while (get_current_ms() < end)
@@ -33,9 +33,9 @@ static int	sim_sleep(t_sim *sim, long long duration)
 	return (1);
 }
 
-static void	*coder_routine(void *arg)
+static void *coder_routine(void *arg)
 {
-	t_coder	*coder;
+	t_coder *coder;
 
 	coder = (t_coder *)arg;
 	while (coder->compile_count < coder->conf[NUMBERS_OF_COMPILES_REQUIRED])
@@ -57,7 +57,7 @@ static void	*coder_routine(void *arg)
 		pthread_mutex_unlock(&coder->sim->state_mutex);
 		release_dongles(coder);
 		if (coder->done)
-			break ;
+			break;
 		print_status(coder, "is debugging");
 		if (!sim_sleep(coder->sim, coder->conf[TIME_TO_DEBUG_MS]))
 			return (NULL);
@@ -68,9 +68,9 @@ static void	*coder_routine(void *arg)
 	return (NULL);
 }
 
-static void	stop_and_wake(t_sim *sim)
+static void stop_and_wake(t_sim *sim)
 {
-	int	i;
+	int i;
 
 	pthread_cond_broadcast(&sim->state_cond);
 	i = 0;
@@ -83,20 +83,20 @@ static void	stop_and_wake(t_sim *sim)
 	}
 }
 
-static void	print_burnout(t_sim *sim, int i)
+static void print_burnout(t_sim *sim, int i)
 {
 	pthread_mutex_lock(&sim->log_mutex);
 	printf("%lld %d burned out\n", get_elapsed_ms(sim->start_time),
-		sim->coders[i].coder_id);
+		   sim->coders[i].coder_id);
 	pthread_mutex_unlock(&sim->log_mutex);
 }
 
-static void	*monitor_routine(void *arg)
+static void *monitor_routine(void *arg)
 {
-	t_sim		*sim;
-	long long	now;
-	int			i;
-	int			all_done;
+	t_sim *sim;
+	long long now;
+	int i;
+	int all_done;
 
 	sim = (t_sim *)arg;
 	while (1)
@@ -114,9 +114,8 @@ static void	*monitor_routine(void *arg)
 		{
 			if (!sim->coders[i].done)
 				all_done = 0;
-			if (!sim->coders[i].done && now >= sim->coders[i].last_compile_start
-				+ sim->conf[TIME_TO_BURNOUT_MS])
-				break ;
+			if (!sim->coders[i].done && now >= sim->coders[i].last_compile_start + sim->conf[TIME_TO_BURNOUT_MS])
+				break;
 			i++;
 		}
 		if (i < sim->conf[NUM_OF_CODERS] || all_done)
@@ -138,7 +137,7 @@ static void	*monitor_routine(void *arg)
 	}
 }
 
-static int	init_sim(t_sim *sim, int *conf, t_dongle *dongles, t_coder *coders)
+static int init_sim(t_sim *sim, int *conf, t_dongle *dongles, t_coder *coders)
 {
 	memset(sim, 0, sizeof(*sim));
 	sim->conf = conf;
@@ -151,14 +150,14 @@ static int	init_sim(t_sim *sim, int *conf, t_dongle *dongles, t_coder *coders)
 		return (pthread_mutex_destroy(&sim->state_mutex), 0);
 	if (pthread_mutex_init(&sim->log_mutex, NULL) != 0)
 		return (pthread_cond_destroy(&sim->state_cond),
-			pthread_mutex_destroy(&sim->state_mutex), 0);
+				pthread_mutex_destroy(&sim->state_mutex), 0);
 	return (1);
 }
 
-static void	init_coder_data(t_sim *sim, char *scheduler)
+static void init_coder_data(t_sim *sim, char *scheduler)
 {
-	int	i;
-	int	is_edf;
+	int i;
+	int is_edf;
 
 	is_edf = (strcmp(scheduler, "edf") == 0);
 	i = 0;
@@ -172,19 +171,19 @@ static void	init_coder_data(t_sim *sim, char *scheduler)
 		sim->coders[i].cmp = is_edf ? cmp_edf : cmp_fifo;
 		sim->coders[i].sim = sim;
 		sim->coders[i].dongle_l = &sim->dongles[i];
-		sim->coders[i].dongle_r = &sim->dongles[(i + 1)
-			% sim->conf[NUM_OF_CODERS]];
+		sim->coders[i].dongle_r = &sim->dongles[(i + 1) % sim->conf[NUM_OF_CODERS]];
 		i++;
 	}
 }
 
-int	mainloop(int *conf, t_dongle *dongles, t_coder *coders, char *scheduler)
+int mainloop(int *conf, t_dongle *dongles, t_coder *coders, char *scheduler)
 {
-	t_sim		sim;
-	pthread_t	monitor;
-	int			i;
-	int			simres;
-	int			monitor_created;
+	t_sim sim;
+	pthread_t monitor;
+	int i;
+	int simres;
+	int monitor_created;
+	bool join_success;
 
 	if (!init_sim(&sim, conf, dongles, coders))
 		return (1);
@@ -193,12 +192,14 @@ int	mainloop(int *conf, t_dongle *dongles, t_coder *coders, char *scheduler)
 	while (i < conf[NUM_OF_CODERS])
 	{
 		if (pthread_create(&coders[i].thread_id, NULL, coder_routine,
-				&coders[i]) != 0)
-			break ;
+						   &coders[i]) != 0)
+			break;
 		i++;
 	}
 	monitor_created = (i == conf[NUM_OF_CODERS] && pthread_create(&monitor,
-				NULL, monitor_routine, &sim) == 0);
+																  NULL, monitor_routine, &sim) == 0);
+
+	join_success = true;
 	if (!monitor_created)
 	{
 		pthread_mutex_lock(&sim.state_mutex);
@@ -207,9 +208,18 @@ int	mainloop(int *conf, t_dongle *dongles, t_coder *coders, char *scheduler)
 		stop_and_wake(&sim);
 	}
 	else
-		pthread_join(monitor, NULL);
+	{
+		if (pthread_join(monitor, NULL) != 0)
+			join_success = false;
+	}
 	while (i-- > 0)
-		pthread_join(coders[i].thread_id, NULL);
+	{
+
+		if (pthread_join(coders[i].thread_id, NULL) != 0)
+			join_success = false;
+	}
+	if (!join_success)
+		return (INTERNAL_ERROR);
 	pthread_mutex_lock(&sim.state_mutex);
 	if (sim.simstate == INTERNAL_ERROR)
 		simres = FAILURE;

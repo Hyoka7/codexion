@@ -12,9 +12,9 @@
 
 #include "codexion.h"
 
-static void	cleanup_all(int *conf, t_dongle *dongles, t_coder *coders)
+static void cleanup_all(int *conf, t_dongle *dongles, t_coder *coders)
 {
-	int	i;
+	int i;
 
 	if (dongles && conf)
 	{
@@ -35,13 +35,13 @@ static void	cleanup_all(int *conf, t_dongle *dongles, t_coder *coders)
 		free(conf);
 }
 
-int	main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
-	char		*scheduler;
-	int			*conf;
-	t_dongle	*dongles;
-	t_coder		*coders;
-	int			status;
+	char *scheduler;
+	int *conf;
+	t_dongle *dongles;
+	t_coder *coders;
+	int status;
 
 	if (argc != 9)
 		return (1);
@@ -56,6 +56,7 @@ int	main(int argc, char *argv[])
 		return (1);
 	}
 	status = mainloop(conf, dongles, coders, scheduler);
-	cleanup_all(conf, dongles, coders);
+	if (status != INTERNAL_ERROR)
+		cleanup_all(conf, dongles, coders);
 	return (status);
 }
