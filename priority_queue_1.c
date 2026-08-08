@@ -12,9 +12,9 @@
 
 #include "codexion.h"
 
-t_pq	*create_pq(int num_coders)
+t_pq *create_pq(int num_coders)
 {
-	t_pq	*pq;
+	t_pq *pq;
 
 	pq = malloc(sizeof(t_pq));
 	if (!pq)
@@ -33,15 +33,17 @@ t_pq	*create_pq(int num_coders)
 	return (pq);
 }
 
-static t_pqnode	*create_new_node(t_pq *pq, int coder_id, long long time_data)
+static t_pqnode *create_new_node(t_pq *pq, int coder_id, long long time_data)
 {
-	t_pqnode	*new_node;
+	t_pqnode *new_node;
 
 	new_node = malloc(sizeof(t_pqnode));
 	if (!new_node)
 	{
 		return (NULL);
 	}
+	if (pq->size == 0)
+		pq->next_fifo_rank = 0;
 	new_node->coder_id = coder_id;
 	new_node->fifo_rank = pq->next_fifo_rank;
 	pq->next_fifo_rank += 1;
@@ -49,12 +51,12 @@ static t_pqnode	*create_new_node(t_pq *pq, int coder_id, long long time_data)
 	return (new_node);
 }
 
-int	push_pq(t_pq *queue, int coder_id, long long time_data)
+int push_pq(t_pq *queue, int coder_id, long long time_data)
 {
-	size_t		new_node_i;
-	size_t		cmp_i;
-	t_pqnode	*temp;
-	t_pqnode	*new_node;
+	size_t new_node_i;
+	size_t cmp_i;
+	t_pqnode *temp;
+	t_pqnode *new_node;
 
 	new_node = create_new_node(queue, coder_id, time_data);
 	if (!new_node)
@@ -72,27 +74,27 @@ int	push_pq(t_pq *queue, int coder_id, long long time_data)
 			new_node_i = cmp_i;
 		}
 		else
-			break ;
+			break;
 	}
 	return (SUCCESS);
 }
 
-static void	swap_pqnode(t_pqnode **a, t_pqnode **b)
+static void swap_pqnode(t_pqnode **a, t_pqnode **b)
 {
-	t_pqnode	*temp;
+	t_pqnode *temp;
 
 	temp = *a;
 	*a = *b;
 	*b = temp;
 }
 
-t_pqnode	*pop_pq(t_pq *queue)
+t_pqnode *pop_pq(t_pq *queue)
 {
-	t_pqnode	*res;
-	size_t		left;
-	size_t		right;
-	size_t		parent;
-	size_t		child;
+	t_pqnode *res;
+	size_t left;
+	size_t right;
+	size_t parent;
+	size_t child;
 
 	if (!queue || !queue->size)
 	{
@@ -105,10 +107,10 @@ t_pqnode	*pop_pq(t_pq *queue)
 	{
 		left = 2 * parent + 1;
 		if (left >= queue->size)
-			break ;
+			break;
 		right = 2 * parent + 2;
 		if (right >= queue->size || queue->cmp(queue->queue[left],
-				queue->queue[right]) <= 0)
+											   queue->queue[right]) <= 0)
 			child = left;
 		else
 			child = right;
@@ -118,7 +120,7 @@ t_pqnode	*pop_pq(t_pq *queue)
 			parent = child;
 		}
 		else
-			break ;
+			break;
 	}
 	return (res);
 }

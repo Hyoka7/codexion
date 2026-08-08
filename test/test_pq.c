@@ -1,5 +1,6 @@
 #include "../codexion.h"
 #include <assert.h>
+#include <limits.h>
 
 int test1(void)
 {
@@ -83,6 +84,57 @@ int test5()
     free_priority_queue(pq);
     return (0);
 }
+
+int test6(void)
+{
+    t_pq *pq;
+    t_pqnode *node;
+
+    pq = create_pq(1);
+    assert(pq != NULL);
+    pq->cmp = cmp_fifo;
+    pq->next_fifo_rank = ULLONG_MAX;
+    assert(push_pq(pq, 1, 100) == SUCCESS);
+    node = pop_pq(pq);
+    assert(node != NULL);
+    assert(node->fifo_rank == 0);
+    free(node);
+    assert(push_pq(pq, 2, 100) == SUCCESS);
+    node = pop_pq(pq);
+    assert(node != NULL);
+    assert(node->fifo_rank == 0);
+    free(node);
+    free_priority_queue(pq);
+    return (0);
+}
+
+int test7(void)
+{
+    t_pq *pq;
+    t_pqnode *node;
+    int expected_ids[3] = {3, 1, 2};
+    int i;
+
+    pq = create_pq(3);
+    assert(pq != NULL);
+    pq->cmp = cmp_fifo;
+    assert(push_pq(pq, 3, 100) == SUCCESS);
+    assert(push_pq(pq, 1, 100) == SUCCESS);
+    assert(push_pq(pq, 2, 100) == SUCCESS);
+    i = 0;
+    while (i < 3)
+    {
+        node = pop_pq(pq);
+        assert(node != NULL);
+        assert(node->coder_id == expected_ids[i]);
+        free(node);
+        i++;
+    }
+    assert(pop_pq(pq) == NULL);
+    free_priority_queue(pq);
+    return (0);
+}
+
 int main(void)
 {
     test1();
@@ -90,4 +142,6 @@ int main(void)
     test3();
     test4();
     test5();
+    test6();
+    test7();
 }
