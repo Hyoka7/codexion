@@ -76,6 +76,11 @@ jobs:
           test "$(grep -c 'burned out$' burnout.log)" -eq 1
           test "$(tail -n 1 burnout.log)" = "$(grep 'burned out$' burnout.log)"
 
+      - name: Check burnout timing precision
+        env:
+          BURNOUT_TEST_REPEATS: 10
+        run: ./tests/burnout_timing.sh
+
   sanitizers:
     runs-on: ubuntu-latest
     timeout-minutes: 10
