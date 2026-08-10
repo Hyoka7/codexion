@@ -25,7 +25,12 @@ static int	create_workers(t_sim *sim, pthread_t *monitor,
 			break ;
 		created++;
 	}
-	*monitor_created = (created == sim->conf[NUM_OF_CODERS]
+	sim->timer_created = (created == sim->conf[NUM_OF_CODERS]
+			&& sim->conf[NUM_OF_CODERS] > 1
+			&& pthread_create(&sim->timer_thread, NULL,
+				scheduler_timer_routine, sim) == 0);
+	*monitor_created = ((sim->timer_created
+				|| sim->conf[NUM_OF_CODERS] == 1)
 			&& pthread_create(monitor, NULL, monitor_routine, sim) == 0);
 	if (!*monitor_created)
 	{
@@ -50,6 +55,9 @@ static bool	join_workers(t_sim *sim, pthread_t *monitor, int created,
 		if (pthread_join(sim->coders[created].thread_id, NULL) != 0)
 			join_success = false;
 	}
+	if (sim->timer_created
+		&& pthread_join(sim->timer_thread, NULL) != 0)
+		join_success = false;
 	return (join_success);
 }
 
@@ -63,6 +71,7 @@ static int	finish_simulation(t_sim *sim)
 	else
 		result = SUCCESS;
 	pthread_mutex_unlock(&sim->state_mutex);
+	free_priority_queue(sim->requests);
 	pthread_mutex_destroy(&sim->log_mutex);
 	pthread_cond_destroy(&sim->state_cond);
 	pthread_mutex_destroy(&sim->state_mutex);

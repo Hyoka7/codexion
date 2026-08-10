@@ -33,7 +33,7 @@ static int	start_compile(t_coder *coder)
 	pthread_mutex_lock(&coder->sim->state_mutex);
 	current_time = get_current_ms();
 	if (coder->sim->simstate != IN_PROGRESS
-		|| current_time >= coder->last_compile_start
+		|| current_time > coder->last_compile_start
 		+ coder->conf[TIME_TO_BURNOUT_MS])
 	{
 		pthread_mutex_unlock(&coder->sim->state_mutex);

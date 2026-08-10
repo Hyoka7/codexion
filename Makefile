@@ -6,13 +6,11 @@ CFLAGS = -Wall -Wextra -Werror -pthread
 SRCS = cmp.c \
 	   coder_routine.c \
        coders.c \
-	   dongle_atomic.c \
 	   dongle_common.c \
 	   dongle_get.c \
 	   dongle_init.c \
 	   dongle_release.c \
 	   dongle_single.c \
-	   dongle_wait.c \
 	   log.c \
        main.c \
        mainloop.c \
@@ -20,6 +18,11 @@ SRCS = cmp.c \
        parse.c \
        priority_queue_1.c \
        priority_queue_2.c \
+	   priority_queue_remove.c \
+	   scheduler_get.c \
+	   scheduler_select.c \
+	   scheduler_timer.c \
+	   scheduler_utils.c \
 	   sim_init.c \
        time.c
 

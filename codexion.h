@@ -87,6 +87,7 @@ typedef struct s_coder
 	long long			request_time;
 	int					compile_count;
 	int					done;
+	bool				has_dongles;
 	t_dongle			*dongle_l;
 	t_dongle			*dongle_r;
 	int					*conf;
@@ -102,16 +103,21 @@ struct s_sim
 	t_simstate			simstate;
 	t_coder				*coders;
 	t_dongle			*dongles;
+	t_pq				*requests;
 	pthread_mutex_t		state_mutex;
 	pthread_cond_t		state_cond;
 	pthread_mutex_t		log_mutex;
+	pthread_t			timer_thread;
+	bool				timer_created;
 };
 
 void			print_status(t_coder *coder, const char *status);
+void			print_dongle_pair(t_coder *coder);
 void			print_burnout(t_sim *sim, int index);
 void			stop_and_wake(t_sim *sim);
 void			*coder_routine(void *arg);
 void			*monitor_routine(void *arg);
+void			*scheduler_timer_routine(void *arg);
 int				init_sim_data(t_sim *sim, int *conf, t_dongle *dongles,
 					t_coder *coders);
 void			init_all_coders(t_sim *sim, char *scheduler);
@@ -119,6 +125,7 @@ void			init_all_coders(t_sim *sim, char *scheduler);
 t_pq			*create_pq(int num_coders);
 int				push_pq(t_pq *queue, int coder_id, long long time_data);
 t_pqnode		*pop_pq(t_pq *queue);
+t_pqnode		*remove_pq_at(t_pq *queue, size_t index);
 void			free_priority_queue(t_pq *pq);
 int				cmp_edf(const t_pqnode *a, const t_pqnode *b);
 int				cmp_fifo(const t_pqnode *a, const t_pqnode *b);
@@ -131,8 +138,13 @@ struct timespec	convert_ms_to_timespec(long long time_in_ms);
 t_dongle		*init_dongles(int *conf);
 t_coder			*init_coders(int *conf);
 int				get_dongles(t_coder *coder);
-int				atomic_get_dongles(t_coder *coder, t_dongle *first,
-					t_dongle *second);
+int				get_scheduled_dongles(t_coder *coder);
+void			lock_coder_dongles(t_coder *coder, t_dongle **first,
+					t_dongle **second);
+void			unlock_coder_dongles(t_dongle *first, t_dongle *second);
+bool			request_is_feasible(t_coder *coder, long long now);
+long long		next_scheduler_wake(t_sim *sim);
+void			schedule_requests(t_sim *sim);
 void			release_dongles(t_coder *coder);
 int				simulation_stopped(t_sim *sim);
 void			update_dongle_state(long long now, t_dongle *dongle);
@@ -141,8 +153,6 @@ long long		get_time_data(t_coder *coder);
 bool			is_dongle_for_me(t_coder *coder, t_dongle *dongle);
 void			lock_dongles(t_dongle *first, t_dongle *second);
 void			unlock_dongles(t_dongle *first, t_dongle *second);
-int				wait_for_dongles(t_coder *coder, t_dongle *first,
-					t_dongle *second);
 int				sequence_get_dongles(t_coder *coder, t_dongle *first,
 					t_dongle *second);
 

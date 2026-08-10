@@ -27,6 +27,24 @@ void	print_status(t_coder *coder, const char *status)
 	pthread_mutex_unlock(&sim->log_mutex);
 }
 
+void	print_dongle_pair(t_coder *coder)
+{
+	t_sim		*sim;
+	long long	elapsed;
+
+	sim = coder->sim;
+	pthread_mutex_lock(&sim->log_mutex);
+	pthread_mutex_lock(&sim->state_mutex);
+	if (sim->simstate == IN_PROGRESS)
+	{
+		elapsed = get_elapsed_ms(sim->start_time);
+		printf("%lld %d has taken a dongle\n", elapsed, coder->coder_id);
+		printf("%lld %d has taken a dongle\n", elapsed, coder->coder_id);
+	}
+	pthread_mutex_unlock(&sim->state_mutex);
+	pthread_mutex_unlock(&sim->log_mutex);
+}
+
 void	print_burnout(t_sim *sim, int index)
 {
 	pthread_mutex_lock(&sim->log_mutex);

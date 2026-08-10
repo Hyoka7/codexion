@@ -27,6 +27,7 @@ void	release_dongles(t_coder *coder)
 	if (coder->dongle_l != coder->dongle_r)
 		release_single_dongle(coder->dongle_r, coder->conf);
 	pthread_mutex_lock(&coder->sim->state_mutex);
+	coder->has_dongles = false;
 	pthread_cond_broadcast(&coder->sim->state_cond);
 	pthread_mutex_unlock(&coder->sim->state_mutex);
 }

@@ -34,5 +34,5 @@ int	get_dongles(t_coder *coder)
 	rank_dongles(&first, &second);
 	if (first == second)
 		return (sequence_get_dongles(coder, first, second));
-	return (atomic_get_dongles(coder, first, second));
+	return (get_scheduled_dongles(coder));
 }

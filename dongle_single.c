@@ -11,21 +11,6 @@
 /* ************************************************************************** */
 
 #include "codexion.h"
-#include <errno.h>
-
-static int	wait_single_dongle(t_dongle *dongle)
-{
-	struct timespec	time_spec;
-	long long		wake_time;
-
-	wake_time = get_current_ms() + 1;
-	if (dongle->state == DONGLE_STATE_COOLDOWN
-		&& dongle->cooldown_end < wake_time)
-		wake_time = dongle->cooldown_end;
-	time_spec = convert_ms_to_timespec(wake_time);
-	return (pthread_cond_timedwait(&dongle->cond, &dongle->mutex,
-			&time_spec));
-}
 
 static int	fail_single_wait(t_coder *coder, t_dongle *dongle)
 {
@@ -53,8 +38,8 @@ static int	get_single_dongle(t_dongle *dongle, t_coder *coder)
 			free(pop_pq(dongle->pq));
 			return (pthread_mutex_unlock(&dongle->mutex), SUCCESS);
 		}
-		wait_result = wait_single_dongle(dongle);
-		if (wait_result != SUCCESS && wait_result != ETIMEDOUT)
+		wait_result = pthread_cond_wait(&dongle->cond, &dongle->mutex);
+		if (wait_result != SUCCESS)
 			return (fail_single_wait(coder, dongle));
 	}
 	return (pthread_mutex_unlock(&dongle->mutex), FAILURE);

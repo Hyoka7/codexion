@@ -40,7 +40,7 @@ static int	find_burnout(t_sim *sim, long long now, int *all_done)
 		if (!sim->coders[index].done)
 			*all_done = false;
 		if (!sim->coders[index].done
-			&& now >= sim->coders[index].last_compile_start
+			&& now > sim->coders[index].last_compile_start
 			+ sim->conf[TIME_TO_BURNOUT_MS])
 			return (index);
 		index++;
