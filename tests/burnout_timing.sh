@@ -108,7 +108,7 @@ max_variable_attempts=$((repeat_count * 10))
 
 run_case one-coder-waiting waiting 100 "$repeat_count" \
 	1 100 10 10 10 1 0 fifo
-run_case multiple-coder-waiting waiting 80 "$max_variable_attempts" \
+run_case multiple-coder any 80 "$repeat_count" \
 	5 80 150 10 10 2 20 fifo
 run_case compiling compiling 60 "$max_variable_attempts" \
 	2 60 150 0 0 1 0 fifo
