@@ -6,13 +6,13 @@
 /*   By: hfujisad <hfujisad@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/07/07 17:53:40 by hfujisad          #+#    #+#             */
-/*   Updated: 2026/08/05 20:15:29 by hfujisad         ###   ########.fr       */
+/*   Updated: 2026/08/10 00:00:00 by hfujisad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "codexion.h"
 
-int cmp_fifo(const t_pqnode *a, const t_pqnode *b)
+int	cmp_fifo(const t_pqnode *a, const t_pqnode *b)
 {
 	if (a->queue_seconds < b->queue_seconds)
 		return (-1);
@@ -25,7 +25,7 @@ int cmp_fifo(const t_pqnode *a, const t_pqnode *b)
 	return (0);
 }
 
-int cmp_edf(const t_pqnode *a, const t_pqnode *b)
+int	cmp_edf(const t_pqnode *a, const t_pqnode *b)
 {
 	if (a->queue_seconds < b->queue_seconds)
 		return (-1);

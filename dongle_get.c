@@ -1,37 +1,38 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   time.c                                             :+:      :+:    :+:   */
+/*   dongle_get.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: hfujisad <hfujisad@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/07/07 17:30:30 by hfujisad          #+#    #+#             */
+/*   Created: 2026/08/10 00:00:00 by hfujisad          #+#    #+#             */
 /*   Updated: 2026/08/10 00:00:00 by hfujisad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "codexion.h"
 
-long long	get_current_ms(void)
+static void	rank_dongles(t_dongle **first, t_dongle **second)
 {
-	struct timeval	time_value;
+	t_dongle	*temporary;
 
-	if (gettimeofday(&time_value, NULL) != 0)
-		return (0);
-	return ((long long)time_value.tv_sec * 1000
-		+ time_value.tv_usec / 1000);
+	if ((*first)->dongle_id > (*second)->dongle_id)
+	{
+		temporary = *first;
+		*first = *second;
+		*second = temporary;
+	}
 }
 
-long long	get_elapsed_ms(long long start)
+int	get_dongles(t_coder *coder)
 {
-	return (get_current_ms() - start);
-}
+	t_dongle	*first;
+	t_dongle	*second;
 
-struct timespec	convert_ms_to_timespec(long long milliseconds)
-{
-	struct timespec	time_spec;
-
-	time_spec.tv_sec = milliseconds / 1000;
-	time_spec.tv_nsec = (milliseconds % 1000) * 1000000;
-	return (time_spec);
+	first = coder->dongle_l;
+	second = coder->dongle_r;
+	rank_dongles(&first, &second);
+	if (first == second)
+		return (sequence_get_dongles(coder, first, second));
+	return (atomic_get_dongles(coder, first, second));
 }

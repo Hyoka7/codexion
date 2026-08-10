@@ -6,55 +6,46 @@
 /*   By: hfujisad <hfujisad@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/08/04 17:30:10 by hfujisad          #+#    #+#             */
-/*   Updated: 2026/08/04 17:30:13 by hfujisad         ###   ########.fr       */
+/*   Updated: 2026/08/10 00:00:00 by hfujisad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "codexion.h"
 
-static void cleanup_all(int *conf, t_dongle *dongles, t_coder *coders)
+static void	cleanup_all(int *conf, t_dongle *dongles, t_coder *coders)
 {
-	int i;
+	int	index;
 
-	if (dongles && conf)
+	index = 0;
+	while (dongles && conf && index < conf[NUM_OF_CODERS])
 	{
-		i = 0;
-		while (i < conf[NUM_OF_CODERS])
-		{
-			pthread_mutex_destroy(&dongles[i].mutex);
-			pthread_cond_destroy(&dongles[i].cond);
-			if (dongles[i].pq)
-				free_priority_queue(dongles[i].pq);
-			i++;
-		}
-		free(dongles);
+		pthread_mutex_destroy(&dongles[index].mutex);
+		pthread_cond_destroy(&dongles[index].cond);
+		free_priority_queue(dongles[index].pq);
+		index++;
 	}
-	if (coders)
-		free(coders);
-	if (conf)
-		free(conf);
+	free(dongles);
+	free(coders);
+	free(conf);
 }
 
-int main(int argc, char *argv[])
+int	main(int argc, char *argv[])
 {
-	char *scheduler;
-	int *conf;
-	t_dongle *dongles;
-	t_coder *coders;
-	int status;
+	char		*scheduler;
+	int			*conf;
+	t_dongle	*dongles;
+	t_coder		*coders;
+	int			status;
 
 	if (argc != 9)
-		return (1);
+		return (FAILURE);
 	conf = parser(argv, &scheduler);
 	if (!conf)
-		return (1);
+		return (FAILURE);
 	dongles = init_dongles(conf);
 	coders = init_coders(conf);
 	if (!dongles || !coders)
-	{
-		cleanup_all(conf, dongles, coders);
-		return (1);
-	}
+		return (cleanup_all(conf, dongles, coders), FAILURE);
 	status = mainloop(conf, dongles, coders, scheduler);
 	if (status != INTERNAL_ERROR)
 		cleanup_all(conf, dongles, coders);
