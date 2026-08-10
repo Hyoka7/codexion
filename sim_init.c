@@ -61,14 +61,6 @@ int	init_sim_data(t_sim *sim, int *conf, t_dongle *dongles,
 	sim->dongles = dongles;
 	if (init_sim_locks(sim) == FAILURE)
 		return (FAILURE);
-	sim->requests = create_pq(conf[NUM_OF_CODERS]);
-	if (!sim->requests)
-	{
-		pthread_mutex_destroy(&sim->log_mutex);
-		pthread_cond_destroy(&sim->state_cond);
-		pthread_mutex_destroy(&sim->state_mutex);
-		return (FAILURE);
-	}
 	return (SUCCESS);
 }
 
@@ -82,8 +74,13 @@ void	init_all_coders(t_sim *sim, char *scheduler)
 		set_coder_data(sim, scheduler, index);
 		index++;
 	}
-	if (strcmp(scheduler, "edf") == 0)
-		sim->requests->cmp = cmp_edf;
-	else
-		sim->requests->cmp = cmp_fifo;
+	index = 0;
+	while (index < sim->conf[NUM_OF_CODERS])
+	{
+		if (strcmp(scheduler, "edf") == 0)
+			sim->dongles[index].pq->cmp = cmp_edf;
+		else
+			sim->dongles[index].pq->cmp = cmp_fifo;
+		index++;
+	}
 }

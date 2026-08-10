@@ -88,6 +88,7 @@ typedef struct s_coder
 	int					compile_count;
 	int					done;
 	bool				has_dongles;
+	bool				request_pending;
 	t_dongle			*dongle_l;
 	t_dongle			*dongle_r;
 	int					*conf;
@@ -103,7 +104,6 @@ struct s_sim
 	t_simstate			simstate;
 	t_coder				*coders;
 	t_dongle			*dongles;
-	t_pq				*requests;
 	pthread_mutex_t		state_mutex;
 	pthread_cond_t		state_cond;
 	pthread_mutex_t		log_mutex;

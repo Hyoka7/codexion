@@ -71,7 +71,6 @@ static int	finish_simulation(t_sim *sim)
 	else
 		result = SUCCESS;
 	pthread_mutex_unlock(&sim->state_mutex);
-	free_priority_queue(sim->requests);
 	pthread_mutex_destroy(&sim->log_mutex);
 	pthread_cond_destroy(&sim->state_cond);
 	pthread_mutex_destroy(&sim->state_mutex);
