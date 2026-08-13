@@ -46,7 +46,7 @@ long long	get_time_data(t_coder *coder)
 	if (coder->is_edf)
 		return (coder->last_compile_start
 			+ coder->conf[TIME_TO_BURNOUT_MS]);
-	return (get_elapsed_ms(coder->request_time));
+	return (0);
 }
 
 bool	is_dongle_for_me(t_coder *coder, t_dongle *dongle)

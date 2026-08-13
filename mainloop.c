@@ -83,12 +83,14 @@ int	mainloop(int *conf, t_dongle *dongles, t_coder *coders, char *scheduler)
 	pthread_t	monitor;
 	int			created;
 	bool		monitor_created;
+	bool		join_success;
 
 	if (init_sim_data(&sim, conf, dongles, coders) == FAILURE)
 		return (FAILURE);
 	init_all_coders(&sim, scheduler);
 	created = create_workers(&sim, &monitor, &monitor_created);
-	if (!join_workers(&sim, &monitor, created, monitor_created))
+	join_success = join_workers(&sim, &monitor, created, monitor_created);
+	if (!join_success)
 		return (INTERNAL_ERROR);
 	return (finish_simulation(&sim));
 }

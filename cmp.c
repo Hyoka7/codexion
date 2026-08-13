@@ -14,10 +14,6 @@
 
 int	cmp_fifo(const t_pqnode *a, const t_pqnode *b)
 {
-	if (a->queue_seconds < b->queue_seconds)
-		return (-1);
-	if (a->queue_seconds > b->queue_seconds)
-		return (1);
 	if (a->fifo_rank < b->fifo_rank)
 		return (-1);
 	if (a->fifo_rank > b->fifo_rank)
