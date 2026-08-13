@@ -84,7 +84,6 @@ typedef struct s_coder
 	int					coder_id;
 	pthread_t			thread_id;
 	long long			last_compile_start;
-	long long			request_time;
 	int					compile_count;
 	int					done;
 	bool				has_dongles;

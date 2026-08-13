@@ -19,8 +19,8 @@ static void	cleanup_all(int *conf, t_dongle *dongles, t_coder *coders)
 	index = 0;
 	while (dongles && conf && index < conf[NUM_OF_CODERS])
 	{
-		pthread_mutex_destroy(&dongles[index].mutex);
 		pthread_cond_destroy(&dongles[index].cond);
+		pthread_mutex_destroy(&dongles[index].mutex);
 		free_priority_queue(dongles[index].pq);
 		index++;
 	}

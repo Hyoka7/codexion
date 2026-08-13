@@ -57,7 +57,6 @@ static int	enqueue_request(t_coder *coder)
 	t_dongle	*first;
 	t_dongle	*second;
 
-	coder->request_time = get_current_ms();
 	priority = get_time_data(coder);
 	lock_coder_dongles(coder, &first, &second);
 	if (push_pq(first->pq, coder->coder_id, priority) == FAILURE

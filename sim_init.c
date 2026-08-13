@@ -36,7 +36,6 @@ static void	set_coder_data(t_sim *sim, char *scheduler, int index)
 
 	coder = &sim->coders[index];
 	coder->coder_id = index + 1;
-	coder->request_time = sim->start_time;
 	coder->last_compile_start = sim->start_time;
 	coder->conf = sim->conf;
 	coder->is_edf = (strcmp(scheduler, "edf") == 0);

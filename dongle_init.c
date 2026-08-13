@@ -19,8 +19,8 @@ static void	free_initialized_dongles(t_dongle *dongles, int size)
 	index = 0;
 	while (index < size)
 	{
-		pthread_mutex_destroy(&dongles[index].mutex);
 		pthread_cond_destroy(&dongles[index].cond);
+		pthread_mutex_destroy(&dongles[index].mutex);
 		free_priority_queue(dongles[index].pq);
 		index++;
 	}
@@ -29,10 +29,10 @@ static void	free_initialized_dongles(t_dongle *dongles, int size)
 static t_dongle	*fail_dongle_init(t_dongle *dongles, int index, int stage)
 {
 	free_initialized_dongles(dongles, index);
-	if (stage >= 1)
-		pthread_mutex_destroy(&dongles[index].mutex);
 	if (stage >= 2)
 		pthread_cond_destroy(&dongles[index].cond);
+	if (stage >= 1)
+		pthread_mutex_destroy(&dongles[index].mutex);
 	free(dongles);
 	return (NULL);
 }
