@@ -108,6 +108,7 @@ struct s_sim
 	pthread_mutex_t		log_mutex;
 	pthread_t			timer_thread;
 	bool				timer_created;
+	bool				start_ready;
 };
 
 void			print_status(t_coder *coder, const char *status);
@@ -117,6 +118,7 @@ void			stop_and_wake(t_sim *sim);
 void			*coder_routine(void *arg);
 void			*monitor_routine(void *arg);
 void			*scheduler_timer_routine(void *arg);
+int				wait_for_simulation_start(t_sim *sim);
 int				init_sim_data(t_sim *sim, int *conf, t_dongle *dongles,
 					t_coder *coders);
 void			init_all_coders(t_sim *sim, char *scheduler);

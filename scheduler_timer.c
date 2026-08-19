@@ -58,6 +58,8 @@ void	*scheduler_timer_routine(void *arg)
 	long long	wake_time;
 
 	sim = (t_sim *)arg;
+	if (wait_for_simulation_start(sim) == FAILURE)
+		return (NULL);
 	while (1)
 	{
 		pthread_mutex_lock(&sim->state_mutex);

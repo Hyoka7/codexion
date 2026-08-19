@@ -61,6 +61,25 @@ static bool	join_workers(t_sim *sim, pthread_t *monitor, int created,
 	return (join_success);
 }
 
+static void	start_workers(t_sim *sim, bool workers_ready)
+{
+	int	index;
+
+	if (!workers_ready)
+		return ;
+	pthread_mutex_lock(&sim->state_mutex);
+	sim->start_time = get_current_ms();
+	index = 0;
+	while (index < sim->conf[NUM_OF_CODERS])
+	{
+		sim->coders[index].last_compile_start = sim->start_time;
+		index++;
+	}
+	sim->start_ready = true;
+	pthread_cond_broadcast(&sim->state_cond);
+	pthread_mutex_unlock(&sim->state_mutex);
+}
+
 static int	finish_simulation(t_sim *sim)
 {
 	int	result;
@@ -89,6 +108,7 @@ int	mainloop(int *conf, t_dongle *dongles, t_coder *coders, char *scheduler)
 		return (FAILURE);
 	init_all_coders(&sim, scheduler);
 	created = create_workers(&sim, &monitor, &monitor_created);
+	start_workers(&sim, monitor_created);
 	join_success = join_workers(&sim, &monitor, created, monitor_created);
 	if (!join_success)
 		return (INTERNAL_ERROR);

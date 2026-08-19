@@ -24,6 +24,7 @@ SRCS = cmp.c \
 	   scheduler_timer.c \
 	   scheduler_utils.c \
 	   sim_init.c \
+	   start_gate.c \
        time.c
 
 OBJS = $(SRCS:.c=.o)

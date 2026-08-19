@@ -68,6 +68,8 @@ void	*monitor_routine(void *arg)
 	int		burned_index;
 
 	sim = (t_sim *)arg;
+	if (wait_for_simulation_start(sim) == FAILURE)
+		return (NULL);
 	while (1)
 	{
 		pthread_mutex_lock(&sim->state_mutex);

@@ -80,6 +80,8 @@ void	*coder_routine(void *arg)
 	t_coder	*coder;
 
 	coder = (t_coder *)arg;
+	if (wait_for_simulation_start(coder->sim) == FAILURE)
+		return (NULL);
 	while (coder->compile_count < coder->conf[NUMBERS_OF_COMPILES_REQUIRED])
 	{
 		if (get_dongles(coder) == FAILURE || start_compile(coder) == FAILURE)
