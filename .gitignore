@@ -1,3 +1,4 @@
 codexion
 *.o
 tests/
+*.pdf

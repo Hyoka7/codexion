@@ -39,7 +39,7 @@ bool	request_is_feasible(t_coder *coder, long long now)
 	bool		available;
 
 	if (now > coder->last_compile_start
-		+ coder->conf[TIME_TO_BURNOUT_MS])
+		+ coder->conf[TIME_TO_BURNOUT_MS] * 1000LL)
 		return (false);
 	lock_coder_dongles(coder, &first, &second);
 	update_dongle_state(now, first);
@@ -57,7 +57,7 @@ long long	next_scheduler_wake(t_sim *sim)
 	int			index;
 
 	wake_time = 0;
-	now = get_current_ms();
+	now = get_current_us();
 	index = 0;
 	while (index < sim->conf[NUM_OF_CODERS])
 	{

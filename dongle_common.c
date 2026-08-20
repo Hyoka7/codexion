@@ -45,7 +45,7 @@ long long	get_time_data(t_coder *coder)
 {
 	if (coder->is_edf)
 		return (coder->last_compile_start
-			+ coder->conf[TIME_TO_BURNOUT_MS]);
+			+ coder->conf[TIME_TO_BURNOUT_MS] * 1000LL);
 	return (0);
 }
 

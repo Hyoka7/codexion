@@ -52,7 +52,7 @@ void	schedule_requests(t_sim *sim)
 	{
 		if (sim->coders[index].request_pending
 			&& request_heads_both_queues(&sim->coders[index])
-			&& request_is_feasible(&sim->coders[index], get_current_ms()))
+			&& request_is_feasible(&sim->coders[index], get_current_us()))
 		{
 			grant_request(&sim->coders[index]);
 			granted = true;

@@ -30,7 +30,7 @@ static int	get_single_dongle(t_dongle *dongle, t_coder *coder)
 		return (pthread_mutex_unlock(&dongle->mutex), FAILURE);
 	while (!simulation_stopped(coder->sim))
 	{
-		update_dongle_state(get_current_ms(), dongle);
+		update_dongle_state(get_current_us(), dongle);
 		if (is_dongle_for_me(coder, dongle))
 		{
 			dongle->state = DONGLE_STATE_USING;

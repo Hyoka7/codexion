@@ -16,7 +16,8 @@ static void	release_single_dongle(t_dongle *dongle, int *conf)
 {
 	pthread_mutex_lock(&dongle->mutex);
 	dongle->state = DONGLE_STATE_COOLDOWN;
-	dongle->cooldown_end = get_current_ms() + conf[DONGLE_COOLDOWN_MS];
+	dongle->cooldown_end = get_current_us()
+		+ conf[DONGLE_COOLDOWN_MS] * 1000LL;
 	pthread_cond_broadcast(&dongle->cond);
 	pthread_mutex_unlock(&dongle->mutex);
 }

@@ -55,7 +55,7 @@ int	init_sim_data(t_sim *sim, int *conf, t_dongle *dongles,
 {
 	memset(sim, 0, sizeof(*sim));
 	sim->conf = conf;
-	sim->start_time = get_current_ms();
+	sim->start_time = get_current_us();
 	sim->coders = coders;
 	sim->dongles = dongles;
 	if (init_sim_locks(sim) == FAILURE)

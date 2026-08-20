@@ -109,6 +109,7 @@ struct s_sim
 	pthread_t			timer_thread;
 	bool				timer_created;
 	bool				start_ready;
+	int					ready_workers;
 };
 
 void			print_status(t_coder *coder, const char *status);
@@ -119,6 +120,7 @@ void			*coder_routine(void *arg);
 void			*monitor_routine(void *arg);
 void			*scheduler_timer_routine(void *arg);
 int				wait_for_simulation_start(t_sim *sim);
+int				start_simulation(t_sim *sim, int expected_workers);
 int				init_sim_data(t_sim *sim, int *conf, t_dongle *dongles,
 					t_coder *coders);
 void			init_all_coders(t_sim *sim, char *scheduler);
@@ -132,8 +134,8 @@ int				cmp_edf(const t_pqnode *a, const t_pqnode *b);
 int				cmp_fifo(const t_pqnode *a, const t_pqnode *b);
 
 int				*parser(char **argv, char **scheduler);
-long long		get_current_ms(void);
-long long		get_elapsed_ms(long long ms_start);
+long long		get_current_us(void);
+long long		get_elapsed_ms(long long us_start);
 struct timespec	convert_ms_to_timespec(long long time_in_ms);
 
 t_dongle		*init_dongles(int *conf);

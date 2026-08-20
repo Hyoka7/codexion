@@ -16,8 +16,8 @@ static int	sim_sleep(t_sim *sim, long long duration)
 {
 	long long	end;
 
-	end = get_current_ms() + duration;
-	while (get_current_ms() < end)
+	end = get_current_us() + duration * 1000LL;
+	while (get_current_us() < end)
 	{
 		if (simulation_stopped(sim))
 			return (FAILURE);
@@ -31,10 +31,10 @@ static int	start_compile(t_coder *coder)
 	long long	current_time;
 
 	pthread_mutex_lock(&coder->sim->state_mutex);
-	current_time = get_current_ms();
+	current_time = get_current_us();
 	if (coder->sim->simstate != IN_PROGRESS
 		|| current_time > coder->last_compile_start
-		+ coder->conf[TIME_TO_BURNOUT_MS])
+		+ coder->conf[TIME_TO_BURNOUT_MS] * 1000LL)
 	{
 		pthread_mutex_unlock(&coder->sim->state_mutex);
 		release_dongles(coder);

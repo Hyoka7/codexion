@@ -12,19 +12,18 @@
 
 #include "codexion.h"
 
-long long	get_current_ms(void)
+long long	get_current_us(void)
 {
 	struct timeval	time_value;
 
 	if (gettimeofday(&time_value, NULL) != 0)
 		return (0);
-	return ((long long)time_value.tv_sec * 1000
-		+ time_value.tv_usec / 1000);
+	return ((long long)time_value.tv_sec * 1000000 + time_value.tv_usec);
 }
 
 long long	get_elapsed_ms(long long start)
 {
-	return (get_current_ms() - start);
+	return ((get_current_us() - start) / 1000);
 }
 
 struct timespec	convert_ms_to_timespec(long long milliseconds)

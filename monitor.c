@@ -41,7 +41,7 @@ static int	find_burnout(t_sim *sim, long long now, int *all_done)
 			*all_done = false;
 		if (!sim->coders[index].done
 			&& now > sim->coders[index].last_compile_start
-			+ sim->conf[TIME_TO_BURNOUT_MS])
+			+ sim->conf[TIME_TO_BURNOUT_MS] * 1000LL)
 			return (index);
 		index++;
 	}
@@ -52,7 +52,7 @@ static bool	monitor_should_stop(t_sim *sim, int *burned_index)
 {
 	int	all_done;
 
-	*burned_index = find_burnout(sim, get_current_ms(), &all_done);
+	*burned_index = find_burnout(sim, get_current_us(), &all_done);
 	if (*burned_index < 0 && !all_done)
 		return (false);
 	if (*burned_index >= 0)

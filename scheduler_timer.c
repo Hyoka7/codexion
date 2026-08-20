@@ -17,21 +17,17 @@ static void	sleep_until_wake(t_sim *sim, long long wake_time)
 	long long	now;
 	long long	delay;
 
-	now = get_current_ms();
+	now = get_current_us();
 	while (now < wake_time && !simulation_stopped(sim))
 	{
 		delay = wake_time - now;
-		if (delay > 11)
-			delay = 10;
-		else if (delay > 2)
-			delay--;
-		else
-			delay = 0;
-		if (delay > 0)
-			usleep(delay * 1000);
+		if (delay > 11000)
+			usleep(10000);
+		else if (delay > 1000)
+			usleep(delay - 500);
 		else
 			usleep(100);
-		now = get_current_ms();
+		now = get_current_us();
 	}
 }
 
