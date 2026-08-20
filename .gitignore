@@ -2,3 +2,4 @@ codexion
 *.o
 tests/
 *.pdf
+README_ja.md

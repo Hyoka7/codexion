@@ -118,6 +118,30 @@ tie-breaker.
 The scheduler grants both dongles atomically. A waiting coder never holds only
 one dongle while waiting for the other.
 
+### Priority queue implementation
+
+Each dongle owns an array-based binary min-heap. The node at `queue[0]` is the
+request with the highest scheduling priority. A node stores the coder ID, its
+FIFO rank, and the absolute EDF deadline in microseconds.
+
+`push_pq()` appends a node and moves it toward the root while it has a higher
+priority than its parent. `pop_pq()` replaces the root with the last node and
+moves that node down through the smaller-priority child. Insertion and removal
+of the root therefore take `O(log n)` time. `remove_pq_at()` supports rollback
+and cancellation of a request at an arbitrary index by rebuilding the heap in
+`O(n)` time.
+
+The heap uses a comparison function selected by the scheduler:
+
+- FIFO compares the per-dongle insertion rank. The smaller rank wins.
+- EDF compares the absolute burnout deadline. If deadlines are equal, the
+  smaller coder ID wins.
+
+A request is pushed into the heaps of both adjacent dongles while both dongle
+mutexes are locked. The scheduler grants the request only when the same coder
+is at the root of both heaps and both dongles are available. On allocation,
+the two root nodes are removed and freed.
+
 ## Thread model
 
 The program uses three kinds of threads:
@@ -266,14 +290,13 @@ associated mutex and checks the protected state again.
 
 ## Resources
 
-- [The Open Group - POSIX `pthread_mutex_lock`](https://pubs.opengroup.org/onlinepubs/9799919799/functions/pthread_mutex_lock.html)
-- [Linux man-pages - POSIX threads overview](https://man7.org/linux/man-pages/man7/pthreads.7.html)
-- [Linux man-pages - `pthread_cond_wait`](https://man7.org/linux/man-pages/man3/pthread_cond_wait.3p.html)
-
+- [JM Project - POSIX threads overview](https://linuxjm.sourceforge.io/html/LDP_man-pages/man7/pthreads.7.html)
+- [JM Project - `pthread_create`](https://linuxjm.sourceforge.io/html/LDP_man-pages/man3/pthread_create.3.html)
+- [JM Project - `pthread_join`](https://linuxjm.sourceforge.io/html/LDP_man-pages/man3/pthread_join.3.html)
+- [JM Project - mutex operations](https://linuxjm.sourceforge.io/html/glibc-linuxthreads/man3/pthread_mutex_lock.3.html)
+- [JM Project - condition variable operations](https://linuxjm.sourceforge.io/html/glibc-linuxthreads/man3/pthread_cond_wait.3.html)
+- [Ｃで優先度付きキューを自作してみた](https://qiita.com/anonymously115/items/3b2948a26871615f7fea)
 ### AI Usage
-
-<!--
-Describe how AI was used, specifying the tasks and the parts of the project
-concerned. Replace this comment with your own account before submission.
--->
-
+- README Writing
+- Testing
+- Debugging
