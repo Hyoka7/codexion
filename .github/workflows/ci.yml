@@ -79,7 +79,21 @@ jobs:
       - name: Check burnout timing precision
         env:
           BURNOUT_TEST_REPEATS: 10
-        run: ./tests/burnout_timing.sh
+        run: |
+          for ((i = 1; i <= BURNOUT_TEST_REPEATS; i++)); do
+            timeout 5s ./codexion 1 100 10 10 10 1 0 fifo > burnout.log
+            awk '
+              $3 == "burned" && $4 == "out" {
+                count++
+                if ($1 < 100 || $1 > 110)
+                  exit 1
+              }
+              END {
+                if (count != 1)
+                  exit 1
+              }
+            ' burnout.log
+          done
 
   sanitizers:
     runs-on: ubuntu-latest
@@ -98,7 +112,8 @@ jobs:
             mainloop.c monitor.c parse.c priority_queue_1.c \
             priority_queue_2.c \
             priority_queue_remove.c scheduler_get.c scheduler_select.c \
-            scheduler_timer.c scheduler_utils.c sim_init.c time.c \
+            scheduler_timer.c scheduler_utils.c sim_init.c start_gate.c \
+            time.c \
             -o codexion_sanitized
 
       - name: Run sanitizer completion case
