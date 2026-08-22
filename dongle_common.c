@@ -12,20 +12,19 @@
 
 #include "codexion.h"
 
-int	simulation_stopped(t_sim *sim)
+bool	is_simulation_stopped(t_sim *sim)
 {
-	int	simstate;
+	bool	is_stopped;
 
 	pthread_mutex_lock(&sim->state_mutex);
-	simstate = sim->simstate;
+	is_stopped = (sim->simstate != IN_PROGRESS);
 	pthread_mutex_unlock(&sim->state_mutex);
-	return (simstate);
+	return (is_stopped);
 }
 
-void	update_dongle_state(long long now, t_dongle *dongle)
+void	update_dongle_available(long long now, t_dongle *dongle)
 {
-	if (dongle->state == DONGLE_STATE_COOLDOWN
-		&& dongle->cooldown_end <= now)
+	if (dongle->state == DONGLE_STATE_COOLDOWN && dongle->cooldown_end <= now)
 		dongle->state = DONGLE_STATE_AVAILABLE;
 }
 
@@ -44,8 +43,8 @@ int	try_to_push(t_dongle *dongle, t_coder *coder, long long data)
 long long	get_time_data(t_coder *coder)
 {
 	if (coder->is_edf)
-		return (coder->last_compile_start
-			+ coder->conf[TIME_TO_BURNOUT_MS] * 1000LL);
+		return (coder->last_compile_start + coder->conf[TIME_TO_BURNOUT_MS]
+			* 1000LL);
 	return (0);
 }
 

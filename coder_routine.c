@@ -6,7 +6,7 @@
 /*   By: hfujisad <hfujisad@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/08/10 00:00:00 by hfujisad          #+#    #+#             */
-/*   Updated: 2026/08/10 00:00:00 by hfujisad         ###   ########.fr       */
+/*   Updated: 2026/08/22 17:15:31 by hfujisad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@ static int	sim_sleep(t_sim *sim, long long duration)
 	end = get_current_us() + duration * 1000LL;
 	while (get_current_us() < end)
 	{
-		if (simulation_stopped(sim))
+		if (is_simulation_stopped(sim))
 			return (FAILURE);
 		usleep(500);
 	}

@@ -6,7 +6,7 @@
 /*   By: hfujisad <hfujisad@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/08/10 00:00:00 by hfujisad          #+#    #+#             */
-/*   Updated: 2026/08/10 00:00:00 by hfujisad         ###   ########.fr       */
+/*   Updated: 2026/08/22 15:42:41 by hfujisad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,8 +42,8 @@ bool	request_is_feasible(t_coder *coder, long long now)
 		+ coder->conf[TIME_TO_BURNOUT_MS] * 1000LL)
 		return (false);
 	lock_coder_dongles(coder, &first, &second);
-	update_dongle_state(now, first);
-	update_dongle_state(now, second);
+	update_dongle_available(now, first);
+	update_dongle_available(now, second);
 	available = (first->state == DONGLE_STATE_AVAILABLE
 			&& second->state == DONGLE_STATE_AVAILABLE);
 	unlock_coder_dongles(first, second);
@@ -62,7 +62,7 @@ long long	next_scheduler_wake(t_sim *sim)
 	while (index < sim->conf[NUM_OF_CODERS])
 	{
 		pthread_mutex_lock(&sim->dongles[index].mutex);
-		update_dongle_state(now, &sim->dongles[index]);
+		update_dongle_available(now, &sim->dongles[index]);
 		if (sim->dongles[index].state == DONGLE_STATE_COOLDOWN
 			&& (wake_time == 0
 				|| sim->dongles[index].cooldown_end < wake_time))

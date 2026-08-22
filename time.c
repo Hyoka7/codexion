@@ -25,12 +25,3 @@ long long	get_elapsed_ms(long long start)
 {
 	return ((get_current_us() - start) / 1000);
 }
-
-struct timespec	convert_ms_to_timespec(long long milliseconds)
-{
-	struct timespec	time_spec;
-
-	time_spec.tv_sec = milliseconds / 1000;
-	time_spec.tv_nsec = (milliseconds % 1000) * 1000000;
-	return (time_spec);
-}

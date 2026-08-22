@@ -6,7 +6,7 @@
 /*   By: hfujisad <hfujisad@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/29 20:58:16 by hfujisad          #+#    #+#             */
-/*   Updated: 2026/08/10 00:00:00 by hfujisad         ###   ########.fr       */
+/*   Updated: 2026/08/22 17:45:31 by hfujisad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,14 +30,14 @@ typedef enum e_simstate
 	BURN_OUT,
 	INTERNAL_ERROR,
 	SIMSTATE_MAX
-}	t_simstate;
+}						t_simstate;
 
 typedef struct s_pqnode
 {
 	int					coder_id;
 	unsigned long long	fifo_rank;
 	long long			queue_seconds;
-}	t_pqnode;
+}						t_pqnode;
 
 typedef struct s_pq
 {
@@ -45,7 +45,7 @@ typedef struct s_pq
 	size_t				size;
 	unsigned long long	next_fifo_rank;
 	int					(*cmp)(const t_pqnode *, const t_pqnode *);
-}	t_pq;
+}						t_pq;
 
 typedef enum e_config
 {
@@ -57,7 +57,7 @@ typedef enum e_config
 	NUMBERS_OF_COMPILES_REQUIRED,
 	DONGLE_COOLDOWN_MS,
 	CONFIG_MAX
-}	t_config;
+}						t_config;
 
 typedef enum e_dongle_state
 {
@@ -65,7 +65,7 @@ typedef enum e_dongle_state
 	DONGLE_STATE_COOLDOWN,
 	DONGLE_STATE_USING,
 	DONGLE_MAX
-}	t_dongle_state;
+}						t_dongle_state;
 
 typedef struct s_dongle
 {
@@ -75,7 +75,7 @@ typedef struct s_dongle
 	t_pq				*pq;
 	pthread_mutex_t		mutex;
 	pthread_cond_t		cond;
-}	t_dongle;
+}						t_dongle;
 
 typedef struct s_sim	t_sim;
 
@@ -94,9 +94,9 @@ typedef struct s_coder
 	int					is_edf;
 	int					(*cmp)(const t_pqnode *, const t_pqnode *);
 	t_sim				*sim;
-}	t_coder;
+}						t_coder;
 
-struct s_sim
+struct					s_sim
 {
 	int					*conf;
 	long long			start_time;
@@ -112,54 +112,55 @@ struct s_sim
 	int					ready_workers;
 };
 
-void			print_status(t_coder *coder, const char *status);
-void			print_dongle_pair(t_coder *coder);
-void			print_burnout(t_sim *sim, int index);
-void			stop_and_wake(t_sim *sim);
-void			*coder_routine(void *arg);
-void			*monitor_routine(void *arg);
-void			*scheduler_timer_routine(void *arg);
-int				wait_for_simulation_start(t_sim *sim);
-int				start_simulation(t_sim *sim, int expected_workers);
-int				init_sim_data(t_sim *sim, int *conf, t_dongle *dongles,
-					t_coder *coders);
-void			init_all_coders(t_sim *sim, char *scheduler);
+void					print_status(t_coder *coder, const char *status);
+void					print_dongle_pair(t_coder *coder);
+void					print_burnout(t_sim *sim, int index);
+void					stop_and_wake(t_sim *sim);
+void					*coder_routine(void *arg);
+void					*monitor_routine(void *arg);
+void					*scheduler_timer_routine(void *arg);
+int						wait_for_simulation_start(t_sim *sim);
+int						start_simulation(t_sim *sim, int expected_workers);
+int						init_sim_data(t_sim *sim, int *conf, t_dongle *dongles,
+							t_coder *coders);
+void					init_all_coders(t_sim *sim, char *scheduler);
 
-t_pq			*create_pq(int num_coders);
-int				push_pq(t_pq *queue, int coder_id, long long time_data);
-t_pqnode		*pop_pq(t_pq *queue);
-t_pqnode		*remove_pq_at(t_pq *queue, size_t index);
-void			free_priority_queue(t_pq *pq);
-int				cmp_edf(const t_pqnode *a, const t_pqnode *b);
-int				cmp_fifo(const t_pqnode *a, const t_pqnode *b);
+t_pq					*create_pq(int num_coders);
+int						push_pq(t_pq *queue, int coder_id, long long time_data);
+t_pqnode				*pop_pq(t_pq *queue);
+t_pqnode				*remove_pq_at(t_pq *queue, size_t index);
+void					free_priority_queue(t_pq *pq);
+int						cmp_edf(const t_pqnode *a, const t_pqnode *b);
+int						cmp_fifo(const t_pqnode *a, const t_pqnode *b);
 
-int				*parser(char **argv, char **scheduler);
-long long		get_current_us(void);
-long long		get_elapsed_ms(long long us_start);
-struct timespec	convert_ms_to_timespec(long long time_in_ms);
+int						*parser(char **argv, char **scheduler);
+long long				get_current_us(void);
+long long				get_elapsed_ms(long long us_start);
 
-t_dongle		*init_dongles(int *conf);
-t_coder			*init_coders(int *conf);
-int				get_dongles(t_coder *coder);
-int				get_scheduled_dongles(t_coder *coder);
-void			lock_coder_dongles(t_coder *coder, t_dongle **first,
-					t_dongle **second);
-void			unlock_coder_dongles(t_dongle *first, t_dongle *second);
-bool			request_is_feasible(t_coder *coder, long long now);
-long long		next_scheduler_wake(t_sim *sim);
-void			schedule_requests(t_sim *sim);
-void			release_dongles(t_coder *coder);
-int				simulation_stopped(t_sim *sim);
-void			update_dongle_state(long long now, t_dongle *dongle);
-int				try_to_push(t_dongle *dongle, t_coder *coder, long long data);
-long long		get_time_data(t_coder *coder);
-bool			is_dongle_for_me(t_coder *coder, t_dongle *dongle);
-void			lock_dongles(t_dongle *first, t_dongle *second);
-void			unlock_dongles(t_dongle *first, t_dongle *second);
-int				sequence_get_dongles(t_coder *coder, t_dongle *first,
-					t_dongle *second);
+t_dongle				*init_dongles(int *conf);
+t_coder					*init_coders(int *conf);
+int						get_dongles(t_coder *coder);
+int						get_scheduled_dongles(t_coder *coder);
+void					lock_coder_dongles(t_coder *coder, t_dongle **first,
+							t_dongle **second);
+void					unlock_coder_dongles(t_dongle *first, t_dongle *second);
+bool					request_is_feasible(t_coder *coder, long long now);
+long long				next_scheduler_wake(t_sim *sim);
+void					schedule_requests(t_sim *sim);
+void					release_dongles(t_coder *coder);
+bool					is_simulation_stopped(t_sim *sim);
+void					update_dongle_available(long long now,
+							t_dongle *dongle);
+int						try_to_push(t_dongle *dongle, t_coder *coder,
+							long long data);
+long long				get_time_data(t_coder *coder);
+bool					is_dongle_for_me(t_coder *coder, t_dongle *dongle);
+void					lock_dongles(t_dongle *first, t_dongle *second);
+void					unlock_dongles(t_dongle *first, t_dongle *second);
+int						sequence_get_dongles(t_coder *coder, t_dongle *first,
+							t_dongle *second);
 
-int				mainloop(int *conf, t_dongle *dongles, t_coder *coders,
-					char *scheduler);
+int						mainloop(int *conf, t_dongle *dongles, t_coder *coders,
+							char *scheduler);
 
 #endif

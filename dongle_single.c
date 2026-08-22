@@ -28,9 +28,9 @@ static int	get_single_dongle(t_dongle *dongle, t_coder *coder)
 	pthread_mutex_lock(&dongle->mutex);
 	if (try_to_push(dongle, coder, get_time_data(coder)) == FAILURE)
 		return (pthread_mutex_unlock(&dongle->mutex), FAILURE);
-	while (!simulation_stopped(coder->sim))
+	while (!is_simulation_stopped(coder->sim))
 	{
-		update_dongle_state(get_current_us(), dongle);
+		update_dongle_available(get_current_us(), dongle);
 		if (is_dongle_for_me(coder, dongle))
 		{
 			dongle->state = DONGLE_STATE_USING;

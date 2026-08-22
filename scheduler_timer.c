@@ -6,7 +6,7 @@
 /*   By: hfujisad <hfujisad@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/08/10 00:00:00 by hfujisad          #+#    #+#             */
-/*   Updated: 2026/08/10 00:00:00 by hfujisad         ###   ########.fr       */
+/*   Updated: 2026/08/22 17:45:17 by hfujisad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@ static void	sleep_until_wake(t_sim *sim, long long wake_time)
 	long long	delay;
 
 	now = get_current_us();
-	while (now < wake_time && !simulation_stopped(sim))
+	while (now < wake_time && !is_simulation_stopped(sim))
 	{
 		delay = wake_time - now;
 		if (delay > 11000)
